@@ -1,0 +1,132 @@
+# GitLab Runners - Beehive Deployment
+#
+# Task automation for deploying GitLab Runners to Bates Kubernetes clusters.
+#
+# Prerequisites:
+#   - just (https://github.com/casey/just)
+#   - tofu (OpenTofu)
+#   - kubectl with GitLab Agent access
+#   - GitLab API token with create_runner scope
+#
+# Usage:
+#   just init          # Initialize OpenTofu
+#   just plan          # Plan deployment
+#   just deploy        # Apply deployment
+#   just status        # Check runner status
+#   just logs          # View runner logs
+
+# Default recipe - list available commands
+default:
+    @just --list
+
+# Configuration
+cluster := "beehive"
+tfvars := "beehive.tfvars"
+namespace := "gitlab-runners"
+
+# =============================================================================
+# Deployment Commands
+# =============================================================================
+
+# Initialize OpenTofu
+init:
+    tofu init
+
+# Plan deployment
+plan:
+    tofu plan -var-file={{tfvars}}
+
+# Apply deployment
+deploy:
+    tofu apply -var-file={{tfvars}} -auto-approve
+
+# Destroy runners (with confirmation)
+destroy:
+    @echo "WARNING: This will destroy all GitLab runners in {{namespace}}"
+    @read -p "Are you sure? (yes/no): " confirm && [ "$$confirm" = "yes" ] || exit 1
+    tofu destroy -var-file={{tfvars}} -auto-approve
+
+# Force destroy (no confirmation)
+destroy-force:
+    tofu destroy -var-file={{tfvars}} -auto-approve
+
+# =============================================================================
+# Status Commands
+# =============================================================================
+
+# Show runner status
+status:
+    @echo "=== GitLab Runners in {{namespace}} ==="
+    @kubectl get pods -n {{namespace}} -l app=gitlab-runner 2>/dev/null || echo "No runner pods found"
+    @echo ""
+    @echo "=== Deployments ==="
+    @kubectl get deployments -n {{namespace}} 2>/dev/null || echo "No deployments found"
+    @echo ""
+    @echo "=== Helm Releases ==="
+    @helm list -n {{namespace}} 2>/dev/null || echo "No helm releases found"
+
+# Show runner logs
+logs runner="nix-runner":
+    kubectl logs -n {{namespace}} -l release={{runner}} -f --tail=100
+
+# Show all runner logs
+logs-all:
+    kubectl logs -n {{namespace}} -l app=gitlab-runner -f --tail=100
+
+# Exec into runner pod
+exec runner="nix-runner":
+    kubectl exec -it -n {{namespace}} $(kubectl get pod -n {{namespace}} -l release={{runner}} -o jsonpath='{.items[0].metadata.name}') -- /bin/sh
+
+# =============================================================================
+# Validation Commands
+# =============================================================================
+
+# Validate configuration
+validate:
+    tofu validate
+
+# Format files
+fmt:
+    tofu fmt -recursive
+
+# Check formatting without changes
+fmt-check:
+    tofu fmt -recursive -check
+
+# =============================================================================
+# Full Workflows
+# =============================================================================
+
+# Full deploy cycle: init, plan, deploy
+full: init plan deploy
+
+# Refresh state
+refresh:
+    tofu refresh -var-file={{tfvars}}
+
+# Show current state
+state:
+    tofu state list
+
+# =============================================================================
+# Debugging
+# =============================================================================
+
+# Describe runner pods
+describe runner="nix-runner":
+    kubectl describe pod -n {{namespace}} -l release={{runner}}
+
+# Get events
+events:
+    kubectl get events -n {{namespace}} --sort-by='.lastTimestamp'
+
+# Check runner registration in GitLab (requires GITLAB_TOKEN)
+check-registration:
+    @echo "Checking runner registration..."
+    @if [ -n "$$GITLAB_TOKEN" ]; then \
+        curl -s --header "PRIVATE-TOKEN: $$GITLAB_TOKEN" \
+            "https://gitlab.com/api/v4/projects/$$PROJECT_ID/runners" | \
+            jq '.[] | {id, description, status, tags}'; \
+    else \
+        echo "Set GITLAB_TOKEN and PROJECT_ID environment variables"; \
+    fi
