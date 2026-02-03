@@ -11,7 +11,7 @@
   tags:
     - nix
   interruptible: true
-  timeout: 60 minutes
+  timeout: 90 minutes
   before_script:
     - apk add --no-cache curl xz bash git
     # Fix /nix permissions (runner mounts emptyDir which is world-writable)
