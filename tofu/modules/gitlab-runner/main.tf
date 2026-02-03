@@ -131,11 +131,18 @@ locals {
     trimspace(data.local_file.runner_token[0].content)
   ) : var.runner_token
 
-  # Generate complete helm values
-  helm_values = yamlencode({
+  # Base values that MUST always be set (gitlabUrl, runnerToken)
+  # These are merged with any additional_values provided
+  base_values = yamlencode({
     gitlabUrl   = var.gitlab_url
     runnerToken = local.runner_token
-    concurrent  = var.concurrent_jobs
+  })
+
+  # Generate complete helm values for when no additional_values provided
+  helm_values = yamlencode({
+    gitlabUrl     = var.gitlab_url
+    runnerToken   = local.runner_token
+    concurrent    = var.concurrent_jobs
     checkInterval = var.poll_interval
 
     rbac = {
@@ -211,6 +218,7 @@ resource "helm_release" "gitlab_runner" {
     null_resource.register_runner
   ]
 
-  # Use generated values or custom additional_values
-  values = var.additional_values != "" ? [var.additional_values] : [local.helm_values]
+  # Always include base_values (gitlabUrl, runnerToken) first
+  # Then merge additional_values or use full helm_values
+  values = var.additional_values != "" ? [local.base_values, var.additional_values] : [local.helm_values]
 }

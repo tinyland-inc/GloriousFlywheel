@@ -46,8 +46,10 @@ provider "kubernetes" {
 }
 
 provider "helm" {
-  # Helm 3.x provider uses same config as kubernetes provider
-  # Config is automatically inherited from the kubernetes provider block
+  kubernetes = {
+    config_path    = var.k8s_config_path != "" ? var.k8s_config_path : "~/.kube/config"
+    config_context = var.cluster_context
+  }
 }
 
 # =============================================================================
