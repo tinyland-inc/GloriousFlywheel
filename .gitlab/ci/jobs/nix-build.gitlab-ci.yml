@@ -5,10 +5,16 @@
 
 .nix-build-base:
   stage: build
+  image:
+    name: nixos/nix:2.24.9
+    entrypoint: [""]
   tags:
     - nix
   interruptible: true
   timeout: 60 minutes
+  before_script:
+    - mkdir -p /etc/nix
+    - echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
   artifacts:
     paths:
       - result*

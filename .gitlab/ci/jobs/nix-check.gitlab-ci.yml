@@ -5,9 +5,15 @@
 
 .nix-check-base:
   stage: validate
+  image:
+    name: nixos/nix:2.24.9
+    entrypoint: [""]
   tags:
     - nix
   interruptible: true
+  before_script:
+    - mkdir -p /etc/nix
+    - echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
 
 # Validate flake configuration
 nix:flake-check:
