@@ -80,8 +80,10 @@ domain       = "rigel.bates.edu"
 # =============================================================================
 # Monitoring
 # =============================================================================
+# NOTE: Disabled until Prometheus Operator is installed on rigel cluster
+# ServiceMonitor CRD requires: monitoring.coreos.com/v1
 
-enable_prometheus_monitoring = true
+enable_prometheus_monitoring = false
 
 # =============================================================================
 # MinIO Configuration (Distributed for production HA)
