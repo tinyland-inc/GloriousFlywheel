@@ -37,7 +37,7 @@ gc_memory_limit   = "128Mi"
 # =============================================================================
 
 use_cnpg_postgres     = true
-install_cnpg_operator = false  # Use existing CNPG operator on beehive (cluster-wide)
+install_cnpg_operator = true  # Must install - no shared CNPG operator on beehive
 pg_instances          = 1 # Single instance for dev
 pg_storage_size       = "5Gi"
 pg_storage_class      = "trident-delete" # Bates uses NetApp Trident CSI
@@ -87,11 +87,11 @@ enable_prometheus_monitoring = false # Disable for dev to reduce resource usage
 # When use_minio=true, MinIO provides self-managed S3-compatible storage.
 # Standalone mode uses a single server with minimal resources.
 #
-# NOTE: install_minio_operator=false because the MinIO Operator is already
-# installed cluster-wide on beehive from another project.
+# NOTE: Despite minio-operator namespace existing on beehive, the MinIO Operator
+# CRDs are not installed cluster-wide. Must install operator to get CRDs.
 
 use_minio              = true
-install_minio_operator = false  # Use existing operator on beehive
+install_minio_operator = true  # Required - MinIO CRDs don't exist on beehive
 minio_distributed_mode = false # Single server for dev
 minio_volume_size      = "10Gi"
 minio_storage_class    = "trident-delete"
