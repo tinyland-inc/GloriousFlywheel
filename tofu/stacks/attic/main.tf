@@ -557,6 +557,9 @@ module "attic_api" {
   enable_pdb             = true
   pdb_min_available      = "1"
 
+  # Wait for rollout - disable for async deploys where deps may not be ready
+  wait_for_rollout = var.api_wait_for_rollout
+
   additional_labels = {
     "app.kubernetes.io/part-of" = "nix-cache"
   }

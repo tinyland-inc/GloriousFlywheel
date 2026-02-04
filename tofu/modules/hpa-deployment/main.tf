@@ -80,6 +80,8 @@ locals {
 # =============================================================================
 
 resource "kubernetes_deployment" "main" {
+  wait_for_rollout = var.wait_for_rollout
+
   metadata {
     name      = var.name
     namespace = var.namespace

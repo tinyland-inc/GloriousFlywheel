@@ -434,6 +434,12 @@ variable "api_memory_target_percent" {
   }
 }
 
+variable "api_wait_for_rollout" {
+  description = "Wait for API deployment rollout (set false if deps may not be ready)"
+  type        = bool
+  default     = true
+}
+
 # =============================================================================
 # GC Worker Resources
 # =============================================================================

@@ -26,6 +26,9 @@ api_memory_limit   = "512Mi"
 api_min_replicas = 1
 api_max_replicas = 2
 
+# Don't wait for rollout - dependencies (PG, MinIO) may still be initializing
+api_wait_for_rollout = false
+
 # GC Worker
 gc_cpu_request    = "25m"
 gc_memory_request = "32Mi"

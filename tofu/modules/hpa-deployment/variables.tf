@@ -65,6 +65,12 @@ variable "pod_annotations" {
   default     = {}
 }
 
+variable "wait_for_rollout" {
+  description = "Wait for deployment rollout to complete (set false for async deploys)"
+  type        = bool
+  default     = true
+}
+
 # =============================================================================
 # Container Configuration
 # =============================================================================
