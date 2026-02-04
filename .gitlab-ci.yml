@@ -104,6 +104,78 @@ include:
 # Verify Stage - Health Checks
 # ==============================================================================
 
+# ==============================================================================
+# Debug Job - Diagnose cluster state (manual trigger)
+# ==============================================================================
+
+debug:cluster:beehive:
+  stage: verify
+  extends: .tofu_with_k8s_tools
+  when: manual
+  variables:
+    KUBE_CONTEXT: "bates-ils/projects/kubernetes/gitlab-agents:beehive"
+    DEBUG_NAMESPACE: "attic-cache-review"
+  script:
+    - |
+      echo "=== Beehive Cluster Diagnostics ==="
+      echo "Context: ${KUBE_CONTEXT}"
+      echo "Namespace: ${DEBUG_NAMESPACE}"
+      echo ""
+
+      echo "=== Namespace Check ==="
+      kubectl get namespace ${DEBUG_NAMESPACE} 2>/dev/null || echo "Namespace doesn't exist yet"
+
+      echo ""
+      echo "=== All Pods in Namespace ==="
+      kubectl get pods -n ${DEBUG_NAMESPACE} -o wide 2>/dev/null || echo "No pods or namespace not found"
+
+      echo ""
+      echo "=== Pod Events ==="
+      kubectl get events -n ${DEBUG_NAMESPACE} --sort-by='.lastTimestamp' 2>/dev/null | tail -30 || echo "No events"
+
+      echo ""
+      echo "=== Deployments ==="
+      kubectl get deployments -n ${DEBUG_NAMESPACE} 2>/dev/null || echo "No deployments"
+
+      echo ""
+      echo "=== StatefulSets ==="
+      kubectl get statefulsets -n ${DEBUG_NAMESPACE} 2>/dev/null || echo "No statefulsets"
+
+      echo ""
+      echo "=== Services ==="
+      kubectl get services -n ${DEBUG_NAMESPACE} 2>/dev/null || echo "No services"
+
+      echo ""
+      echo "=== PVCs ==="
+      kubectl get pvc -n ${DEBUG_NAMESPACE} 2>/dev/null || echo "No PVCs"
+
+      echo ""
+      echo "=== ConfigMaps ==="
+      kubectl get configmaps -n ${DEBUG_NAMESPACE} 2>/dev/null || echo "No configmaps"
+
+      echo ""
+      echo "=== Secrets (names only) ==="
+      kubectl get secrets -n ${DEBUG_NAMESPACE} 2>/dev/null || echo "No secrets"
+
+      echo ""
+      echo "=== Describe Failing Pods ==="
+      for pod in $(kubectl get pods -n ${DEBUG_NAMESPACE} --field-selector=status.phase!=Running,status.phase!=Succeeded -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
+        echo "--- Pod: $pod ---"
+        kubectl describe pod $pod -n ${DEBUG_NAMESPACE} | tail -50
+        echo ""
+      done
+
+      echo ""
+      echo "=== Check Operators ==="
+      echo "MinIO Operator:"
+      kubectl get pods -n minio-operator 2>/dev/null || echo "MinIO Operator namespace not found"
+      echo ""
+      echo "CNPG Operator:"
+      kubectl get pods -n cnpg-system 2>/dev/null || echo "CNPG namespace not found"
+  rules:
+    - when: manual
+  allow_failure: true
+
 verify:health:review:
   stage: verify
   image: curlimages/curl:latest
