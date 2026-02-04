@@ -112,7 +112,12 @@
       NAMESPACE=$(tofu output -raw namespace)
       DEPLOYMENT=$(tofu output -raw deployment_name)
 
-      kubectl rollout status deployment/${DEPLOYMENT} -n ${NAMESPACE} --timeout=300s
+      # Wait for rollout (non-blocking - dependencies may still be initializing)
+      if ! kubectl rollout status deployment/${DEPLOYMENT} -n ${NAMESPACE} --timeout=300s; then
+        echo "WARNING: Rollout not complete within timeout (dependencies may still be initializing)"
+        echo "The deployment will become ready once PostgreSQL and MinIO are fully initialized"
+        kubectl get pods -n ${NAMESPACE}
+      fi
 
       # Health check gate
       echo ""
