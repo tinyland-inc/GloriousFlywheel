@@ -127,12 +127,21 @@ resource "kubernetes_job" "apply_lifecycle" {
           name  = "mc"
           image = "quay.io/minio/mc:latest"
 
+          # mc needs a writable config directory
+          env {
+            name  = "MC_CONFIG_DIR"
+            value = "/tmp/.mc"
+          }
+
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOT
               set -e
               echo "Waiting for MinIO to be ready..."
               sleep 30
+
+              # Create mc config directory
+              mkdir -p /tmp/.mc
 
               # Source credentials from mounted secret (config.env format)
               echo "Loading credentials..."
@@ -173,6 +182,12 @@ resource "kubernetes_job" "apply_lifecycle" {
             read_only  = true
           }
 
+          # Writable directory for mc config (read_only_root_filesystem blocks /root/.mc)
+          volume_mount {
+            name       = "mc-config"
+            mount_path = "/tmp/.mc"
+          }
+
           resources {
             requests = {
               cpu    = "50m"
@@ -205,6 +220,12 @@ resource "kubernetes_job" "apply_lifecycle" {
           secret {
             secret_name = var.credentials_secret
           }
+        }
+
+        # Writable volume for mc config (needed with read_only_root_filesystem)
+        volume {
+          name = "mc-config"
+          empty_dir {}
         }
       }
     }
