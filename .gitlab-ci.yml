@@ -233,6 +233,24 @@ debug:auto:beehive:
       echo ""
       echo "=== CNPG Cluster Status ==="
       kubectl get cluster -n ${DEBUG_NAMESPACE} -o wide 2>/dev/null || echo "No CNPG cluster"
+
+      echo ""
+      echo "=== Container Logs (CrashLoopBackOff/Error pods) ==="
+      for pod in $(kubectl get pods -n ${DEBUG_NAMESPACE} --field-selector=status.phase!=Running,status.phase!=Succeeded -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
+        echo "--- Logs for pod: $pod ---"
+        # Get logs from all containers in the pod
+        for container in $(kubectl get pod $pod -n ${DEBUG_NAMESPACE} -o jsonpath='{.spec.containers[*].name}' 2>/dev/null); do
+          echo "Container: $container"
+          kubectl logs $pod -n ${DEBUG_NAMESPACE} -c $container --tail=50 2>&1 || echo "No logs available"
+          echo ""
+        done
+        # Also check init containers
+        for initcontainer in $(kubectl get pod $pod -n ${DEBUG_NAMESPACE} -o jsonpath='{.spec.initContainers[*].name}' 2>/dev/null); do
+          echo "Init Container: $initcontainer"
+          kubectl logs $pod -n ${DEBUG_NAMESPACE} -c $initcontainer --tail=20 2>&1 || echo "No logs available"
+          echo ""
+        done
+      done
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
