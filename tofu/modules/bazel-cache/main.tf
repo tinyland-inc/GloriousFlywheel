@@ -142,6 +142,8 @@ resource "kubernetes_deployment_v1" "main" {
           "prometheus.io/scrape" = tostring(var.enable_metrics)
           "prometheus.io/port"   = tostring(local.http_port)
           "prometheus.io/path"   = "/metrics"
+          # Force pod restart when config changes
+          "checksum/config" = sha256(kubernetes_config_map_v1.config.data["config.yaml"])
         }
       }
 
@@ -170,7 +172,13 @@ resource "kubernetes_deployment_v1" "main" {
           name  = "bazel-remote"
           image = var.image
 
-          args = ["--config_file=/etc/bazel-remote/config.yaml"]
+          # Config file + S3 credentials passed via CLI args
+          # Note: $(VAR) syntax is Kubernetes env var expansion, not shell expansion
+          args = [
+            "--config_file=/etc/bazel-remote/config.yaml",
+            "--s3.access_key_id=$(BAZEL_REMOTE_S3_ACCESS_KEY_ID)",
+            "--s3.secret_access_key=$(BAZEL_REMOTE_S3_SECRET_ACCESS_KEY)"
+          ]
 
           port {
             container_port = local.grpc_port

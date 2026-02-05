@@ -620,6 +620,11 @@ module "attic_api" {
     ] : []
   )
 
+  # Force pod restart when config or secrets change
+  pod_annotations = {
+    "checksum/config" = sha256(kubernetes_config_map.attic_config.data["server.toml"])
+  }
+
   depends_on = [
     kubernetes_secret.attic_secrets,
     module.attic_pg,
@@ -662,6 +667,10 @@ resource "kubernetes_deployment" "attic_gc" {
           "app.kubernetes.io/name"       = "attic-gc"
           "app.kubernetes.io/component"  = "garbage-collector"
           "app.kubernetes.io/managed-by" = "opentofu"
+        }
+        annotations = {
+          # Force pod restart when config changes
+          "checksum/config" = sha256(kubernetes_config_map.attic_config.data["server.toml"])
         }
       }
 

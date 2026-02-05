@@ -27,6 +27,8 @@ resource "kubernetes_config_map" "minio_lifecycle" {
   }
 
   data = {
+    # MinIO ILM rules in AWS S3 lifecycle configuration format
+    # See: https://min.io/docs/minio/linux/administration/object-management/object-lifecycle-management.html
     "lifecycle.json" = jsonencode({
       Rules = [
         # Rule 1: Expire NAR files after retention period
@@ -51,22 +53,7 @@ resource "kubernetes_config_map" "minio_lifecycle" {
             Days = var.chunk_retention_days
           }
         },
-        # Rule 3: Clean up narinfo files (metadata) same as NARs
-        {
-          ID     = "expire-narinfo"
-          Status = "Enabled"
-          Filter = {
-            And = {
-              Prefix = ""
-              Tags   = []
-            }
-          }
-          # Match .narinfo suffix via filter
-          Expiration = {
-            Days = var.nar_retention_days
-          }
-        },
-        # Rule 4: Abort incomplete multipart uploads
+        # Rule 3: Abort incomplete multipart uploads (applies to all objects)
         {
           ID     = "abort-incomplete-uploads"
           Status = "Enabled"
