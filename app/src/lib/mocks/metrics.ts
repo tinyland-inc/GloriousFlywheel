@@ -1,135 +1,135 @@
-import type { HPAStatus, PodInfo, MetricCardData } from '$lib/types';
+import type { HPAStatus, PodInfo, MetricCardData } from "$lib/types";
 
 export const MOCK_HPA_STATUS: HPAStatus[] = [
-	{
-		name: 'bates-docker',
-		runner_type: 'docker',
-		current_replicas: 2,
-		desired_replicas: 2,
-		min_replicas: 1,
-		max_replicas: 5,
-		cpu_current: 45,
-		cpu_target: 70,
-		memory_current: 35,
-		memory_target: 80,
-		conditions: [
-			{
-				type: 'AbleToScale',
-				status: 'True',
-				reason: 'ReadyForNewScale',
-				message: 'recommended size matches current size',
-				last_transition: new Date(Date.now() - 3600000).toISOString()
-			}
-		]
-	},
-	{
-		name: 'bates-dind',
-		runner_type: 'dind',
-		current_replicas: 1,
-		desired_replicas: 1,
-		min_replicas: 1,
-		max_replicas: 3,
-		cpu_current: 25,
-		cpu_target: 70,
-		memory_current: 40,
-		memory_target: 80,
-		conditions: []
-	},
-	{
-		name: 'bates-rocky8',
-		runner_type: 'rocky8',
-		current_replicas: 1,
-		desired_replicas: 1,
-		min_replicas: 1,
-		max_replicas: 3,
-		cpu_current: 15,
-		cpu_target: 70,
-		memory_current: 20,
-		memory_target: 80,
-		conditions: []
-	},
-	{
-		name: 'bates-rocky9',
-		runner_type: 'rocky9',
-		current_replicas: 1,
-		desired_replicas: 1,
-		min_replicas: 1,
-		max_replicas: 3,
-		cpu_current: 18,
-		cpu_target: 70,
-		memory_current: 22,
-		memory_target: 80,
-		conditions: []
-	},
-	{
-		name: 'bates-nix',
-		runner_type: 'nix',
-		current_replicas: 1,
-		desired_replicas: 1,
-		min_replicas: 1,
-		max_replicas: 3,
-		cpu_current: 55,
-		cpu_target: 70,
-		memory_current: 60,
-		memory_target: 80,
-		conditions: []
-	}
+  {
+    name: "bates-docker",
+    runner_type: "docker",
+    current_replicas: 2,
+    desired_replicas: 2,
+    min_replicas: 1,
+    max_replicas: 5,
+    cpu_current: 45,
+    cpu_target: 70,
+    memory_current: 35,
+    memory_target: 80,
+    conditions: [
+      {
+        type: "AbleToScale",
+        status: "True",
+        reason: "ReadyForNewScale",
+        message: "recommended size matches current size",
+        last_transition: new Date(Date.now() - 3600000).toISOString(),
+      },
+    ],
+  },
+  {
+    name: "bates-dind",
+    runner_type: "dind",
+    current_replicas: 1,
+    desired_replicas: 1,
+    min_replicas: 1,
+    max_replicas: 3,
+    cpu_current: 25,
+    cpu_target: 70,
+    memory_current: 40,
+    memory_target: 80,
+    conditions: [],
+  },
+  {
+    name: "bates-rocky8",
+    runner_type: "rocky8",
+    current_replicas: 1,
+    desired_replicas: 1,
+    min_replicas: 1,
+    max_replicas: 3,
+    cpu_current: 15,
+    cpu_target: 70,
+    memory_current: 20,
+    memory_target: 80,
+    conditions: [],
+  },
+  {
+    name: "bates-rocky9",
+    runner_type: "rocky9",
+    current_replicas: 1,
+    desired_replicas: 1,
+    min_replicas: 1,
+    max_replicas: 3,
+    cpu_current: 18,
+    cpu_target: 70,
+    memory_current: 22,
+    memory_target: 80,
+    conditions: [],
+  },
+  {
+    name: "bates-nix",
+    runner_type: "nix",
+    current_replicas: 1,
+    desired_replicas: 1,
+    min_replicas: 1,
+    max_replicas: 3,
+    cpu_current: 55,
+    cpu_target: 70,
+    memory_current: 60,
+    memory_target: 80,
+    conditions: [],
+  },
 ];
 
 export const MOCK_PODS: PodInfo[] = [
-	{
-		name: 'bates-docker-gitlab-runner-7b4d5f-abc12',
-		status: 'Running',
-		runner: 'bates-docker',
-		restarts: 0,
-		age: '3d',
-		node: 'k8s-worker-1'
-	},
-	{
-		name: 'bates-docker-gitlab-runner-7b4d5f-def34',
-		status: 'Running',
-		runner: 'bates-docker',
-		restarts: 0,
-		age: '3d',
-		node: 'k8s-worker-2'
-	},
-	{
-		name: 'bates-dind-gitlab-runner-8c5e6g-ghi56',
-		status: 'Running',
-		runner: 'bates-dind',
-		restarts: 0,
-		age: '3d',
-		node: 'k8s-worker-1'
-	},
-	{
-		name: 'bates-rocky8-gitlab-runner-9d6f7h-jkl78',
-		status: 'Running',
-		runner: 'bates-rocky8',
-		restarts: 0,
-		age: '3d',
-		node: 'k8s-worker-3'
-	},
-	{
-		name: 'bates-rocky9-gitlab-runner-ae7g8i-mno90',
-		status: 'Running',
-		runner: 'bates-rocky9',
-		restarts: 0,
-		age: '3d',
-		node: 'k8s-worker-2'
-	},
-	{
-		name: 'bates-nix-gitlab-runner-bf8h9j-pqr12',
-		status: 'Running',
-		runner: 'bates-nix',
-		restarts: 1,
-		age: '3d',
-		node: 'k8s-worker-3'
-	}
+  {
+    name: "bates-docker-gitlab-runner-7b4d5f-abc12",
+    status: "Running",
+    runner: "bates-docker",
+    restarts: 0,
+    age: "3d",
+    node: "k8s-worker-1",
+  },
+  {
+    name: "bates-docker-gitlab-runner-7b4d5f-def34",
+    status: "Running",
+    runner: "bates-docker",
+    restarts: 0,
+    age: "3d",
+    node: "k8s-worker-2",
+  },
+  {
+    name: "bates-dind-gitlab-runner-8c5e6g-ghi56",
+    status: "Running",
+    runner: "bates-dind",
+    restarts: 0,
+    age: "3d",
+    node: "k8s-worker-1",
+  },
+  {
+    name: "bates-rocky8-gitlab-runner-9d6f7h-jkl78",
+    status: "Running",
+    runner: "bates-rocky8",
+    restarts: 0,
+    age: "3d",
+    node: "k8s-worker-3",
+  },
+  {
+    name: "bates-rocky9-gitlab-runner-ae7g8i-mno90",
+    status: "Running",
+    runner: "bates-rocky9",
+    restarts: 0,
+    age: "3d",
+    node: "k8s-worker-2",
+  },
+  {
+    name: "bates-nix-gitlab-runner-bf8h9j-pqr12",
+    status: "Running",
+    runner: "bates-nix",
+    restarts: 1,
+    age: "3d",
+    node: "k8s-worker-3",
+  },
 ];
 
 export const MOCK_DASHBOARD_METRICS: MetricCardData[] = [
-	{ label: 'Total Runners', value: 5, trend: 'stable' },
-	{ label: 'Active Pods', value: 6, trend: 'stable' },
-	{ label: 'Jobs (24h)', value: 142, trend: 'up', change: 12 },
-	{ label: 'Success Rate', value: '96.5%', trend: 'up', change: 1.2 }
+  { label: "Total Runners", value: 5, trend: "stable" },
+  { label: "Active Pods", value: 6, trend: "stable" },
+  { label: "Jobs (24h)", value: 142, trend: "up", change: 12 },
+  { label: "Success Rate", value: "96.5%", trend: "up", change: 1.2 },
 ];

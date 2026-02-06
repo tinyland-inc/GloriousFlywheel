@@ -51,7 +51,7 @@ MAKE_PUBLIC=true
 TOKEN="${ATTIC_TOKEN:-}"
 NAMESPACE="attic-cache"
 VERBOSE=false
-AUTH_FREE=true  # Bates deployment uses auth-free mode by default
+AUTH_FREE=true # Bates deployment uses auth-free mode by default
 
 # Colors
 if [[ -t 1 ]]; then
@@ -299,7 +299,7 @@ configure_cli() {
       log_warn "Login command failed - this may be expected for auth-free servers"
       log_info "Attempting to configure manually..."
       # Create config directly for auth-free access
-      cat > "$config_dir/config.toml" <<EOF
+      cat >"$config_dir/config.toml" <<EOF
 default-server = "$SERVER_NAME"
 
 [servers.$SERVER_NAME]
