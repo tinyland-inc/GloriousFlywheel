@@ -1,0 +1,173 @@
+# Bates ILS Runners - CI/CD Template
+#
+# Include this template in your project to use the Bates ILS runners.
+#
+# Usage in your .gitlab-ci.yml:
+#   include:
+#     - project: 'bates-ils/infrastructure/attic-cache'
+#       ref: main
+#       file: '/ci-templates/bates-ils-runners.gitlab-ci.yml'
+#
+#   my-job:
+#     extends: .docker-job
+#     script:
+#       - echo "Hello from docker runner"
+#
+# Available base jobs:
+#   - .docker-job     : Standard Alpine-based builds
+#   - .dind-job       : Docker-in-Docker builds
+#   - .rocky8-job     : RHEL 8 compatibility
+#   - .rocky9-job     : RHEL 9 compatibility
+#   - .nix-job        : Nix flakes builds
+
+# =============================================================================
+# Base Job Templates
+# =============================================================================
+
+# Standard Docker runner for general builds
+.docker-job:
+  tags:
+    - docker
+    - linux
+    - amd64
+  image: alpine:3.21
+
+# Docker-in-Docker for container builds
+.dind-job:
+  tags:
+    - dind
+    - privileged
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_HOST: tcp://localhost:2375
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    # Wait for Docker daemon
+    - |
+      for i in $(seq 1 30); do
+        docker info >/dev/null 2>&1 && break
+        echo "Waiting for Docker daemon..."
+        sleep 1
+      done
+
+# Rocky Linux 8 for RHEL 8 compatibility
+.rocky8-job:
+  tags:
+    - rocky8
+    - rhel8
+    - linux
+  image: rockylinux:8
+
+# Rocky Linux 9 for RHEL 9 compatibility
+.rocky9-job:
+  tags:
+    - rocky9
+    - rhel9
+    - linux
+  image: rockylinux:9
+
+# Nix with flakes for reproducible builds
+.nix-job:
+  tags:
+    - nix
+    - flakes
+  image: docker.nix-community.org/nixpkgs/nix-flakes:nixos-unstable
+
+# =============================================================================
+# Specialized Job Templates
+# =============================================================================
+
+# Docker build and push to GitLab registry
+.docker-build-job:
+  extends: .dind-job
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+        docker push $CI_REGISTRY_IMAGE:latest
+      fi
+
+# Nix build with Attic cache
+.nix-build-job:
+  extends: .nix-job
+  script:
+    - nix build .#default
+    - nix flake check
+  artifacts:
+    paths:
+      - result
+    expire_in: 1 week
+
+# Nix build with cache push (requires ATTIC_TOKEN variable)
+.nix-build-cached-job:
+  extends: .nix-job
+  script:
+    - nix build .#default
+    - |
+      if [ -n "$ATTIC_TOKEN" ]; then
+        attic login bates $ATTIC_SERVER $ATTIC_TOKEN
+        attic push main result || echo "Cache push failed (non-fatal)"
+      fi
+    - nix flake check
+  artifacts:
+    paths:
+      - result
+    expire_in: 1 week
+
+# Ansible playbook test on Rocky 8
+.ansible-rocky8-job:
+  extends: .rocky8-job
+  before_script:
+    - dnf install -y python3 python3-pip
+    - pip3 install ansible ansible-lint
+  script:
+    - ansible-lint playbook.yml
+    - ansible-playbook --check playbook.yml
+
+# Ansible playbook test on Rocky 9
+.ansible-rocky9-job:
+  extends: .rocky9-job
+  before_script:
+    - dnf install -y python3 python3-pip
+    - pip3 install ansible ansible-lint
+  script:
+    - ansible-lint playbook.yml
+    - ansible-playbook --check playbook.yml
+# =============================================================================
+# Example Usage (commented out)
+# =============================================================================
+
+# Uncomment and customize for your project:
+#
+# stages:
+#   - build
+#   - test
+#   - deploy
+#
+# build:
+#   extends: .docker-job
+#   stage: build
+#   script:
+#     - apk add --no-cache make gcc
+#     - make build
+#   artifacts:
+#     paths:
+#       - build/
+#
+# test:
+#   extends: .docker-job
+#   stage: test
+#   script:
+#     - make test
+#
+# build-container:
+#   extends: .docker-build-job
+#   stage: build
+#   only:
+#     - main
+#     - tags

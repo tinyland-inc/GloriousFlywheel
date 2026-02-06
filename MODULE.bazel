@@ -20,6 +20,39 @@ bazel_dep(name = "rules_shell", version = "0.6.0")
 bazel_dep(name = "platforms", version = "0.0.10")
 
 # =============================================================================
+# JavaScript / TypeScript Rules (aspect_rules_js)
+# =============================================================================
+# SvelteKit app build pipeline via pnpm + Vite
+
+bazel_dep(name = "aspect_rules_js", version = "2.9.2")
+bazel_dep(name = "aspect_rules_ts", version = "3.8.3")
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "rules_nodejs", version = "6.7.3")
+
+# =============================================================================
+# pnpm / npm Integration
+# =============================================================================
+# Translate pnpm-lock.yaml into Bazel-managed node_modules
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm", dev_dependency = True)
+
+npm.npm_translate_lock(
+    name = "npm",
+    pnpm_lock = "//:pnpm-lock.yaml",
+    verify_node_modules_ignored = ".bazelignore",
+)
+
+use_repo(npm, "npm")
+
+# Node.js toolchain (from rules_nodejs)
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
+
+node.toolchain(
+    name = "nodejs",
+    node_version = "22.13.1",
+)
+
+# =============================================================================
 # rules_nixpkgs - Nix Toolchain Integration
 # =============================================================================
 # Provides reproducible toolchains from Nix for Bazel builds.
@@ -84,16 +117,19 @@ use_repo(nix_pkg, "kubectl", "tofu", "yq")
 # Build Configuration Notes
 # =============================================================================
 #
-# This module is optimized for IaC validation, not binary compilation.
+# This module supports both IaC validation and the Runner Dashboard app.
 # Binary builds (Attic server, containers) are handled by Nix:
 #   - nix build .#attic
 #   - nix build .#container
+#   - nix build .#runner-dashboard
+#   - nix build .#runner-dashboard-image
 #
 # Bazel focuses on:
 # 1. Validating OpenTofu modules (//tofu/modules:all_validate)
 # 2. Checking file formatting (//tofu/modules:all_fmt_test)
 # 3. Bundling deployment artifacts (//:deployment_bundle)
 # 4. Running configuration tests (//tests:*)
+# 5. Building the Runner Dashboard SvelteKit app (//app:build)
 #
 # Remote caching via bazel-remote (when deployed):
 #   bazel build --config=ci-cached //...

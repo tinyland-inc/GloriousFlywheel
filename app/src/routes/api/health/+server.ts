@@ -1,0 +1,10 @@
+import { json } from '@sveltejs/kit';
+import type { RequestHandler } from './$types';
+
+export const GET: RequestHandler = async () => {
+	return json({
+		status: 'ok',
+		version: '0.1.0',
+		timestamp: new Date().toISOString()
+	});
+};

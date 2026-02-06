@@ -65,6 +65,10 @@
             # Attic client
             atticClient
 
+            # Node.js / SvelteKit tooling
+            nodejs_22
+            nodePackages.pnpm
+
             # Nix tooling
             nix-prefetch-git
             nix-tree
@@ -92,6 +96,70 @@
             # PostgreSQL client for debugging
             postgresql
           ];
+
+          # Runner Dashboard: pnpm build wrapper
+          runnerDashboard = pkgs.stdenv.mkDerivation {
+            pname = "runner-dashboard";
+            version = "0.1.0";
+            src = ./app;
+            nativeBuildInputs = [ pkgs.nodejs_22 pkgs.nodePackages.pnpm ];
+            buildPhase = ''
+              export HOME=$TMPDIR
+              pnpm install --frozen-lockfile
+              pnpm build
+            '';
+            installPhase = ''
+              mkdir -p $out
+              cp -r build/* $out/
+              cp package.json $out/
+            '';
+          };
+
+          # OCI image for Runner Dashboard
+          runnerDashboardImage = n2c.buildImage {
+            name = "runner-dashboard";
+            tag = "latest";
+
+            copyToRoot = pkgs.buildEnv {
+              name = "runner-dashboard-root";
+              paths = [
+                pkgs.nodejs_22
+                pkgs.cacert
+                pkgs.tzdata
+              ];
+              pathsToLink = [ "/bin" "/etc" "/share" "/lib" ];
+            };
+
+            # Copy the built app into /app
+            layers = [
+              (n2c.buildLayer {
+                copyToRoot = pkgs.runCommand "runner-dashboard-app" { } ''
+                  mkdir -p $out/app
+                  cp -r ${runnerDashboard}/* $out/app/
+                '';
+              })
+            ];
+
+            config = {
+              Entrypoint = [ "${pkgs.nodejs_22}/bin/node" ];
+              Cmd = [ "/app/index.js" ];
+              WorkingDir = "/app";
+              Env = [
+                "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+                "TZ=UTC"
+                "PORT=3000"
+                "HOST=0.0.0.0"
+                "NODE_ENV=production"
+              ];
+              ExposedPorts = {
+                "3000/tcp" = { };
+              };
+              Labels = {
+                "org.opencontainers.image.source" = "https://gitlab.com/bates-ils/infra/attic-cache";
+                "org.opencontainers.image.description" = "Bates ILS Runner Dashboard";
+              };
+            };
+          };
 
           # OCI image for Attic server
           atticServerImage = n2c.buildImage {
@@ -212,6 +280,10 @@
             container-tarball = pkgs.runCommand "attic-server-image.tar.gz" { } ''
               ${atticServerImage.copyToDockerDaemon}/bin/copy-to-docker-daemon | gzip > $out
             '';
+
+            # Runner Dashboard
+            runner-dashboard = runnerDashboard;
+            runner-dashboard-image = runnerDashboardImage;
           };
 
           # Checks for CI validation

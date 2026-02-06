@@ -1,0 +1,238 @@
+import type { RunnerInfo, RunnerConfig } from '$lib/types';
+
+// Mock data matching tofu/stacks/bates-ils-runners/beehive.tfvars exactly
+
+const dockerConfig: RunnerConfig = {
+	name: 'bates-docker',
+	type: 'docker',
+	tags: ['docker', 'linux', 'amd64'],
+	concurrent_jobs: 8,
+	run_untagged: false,
+	protected: false,
+	default_image: 'alpine:3.21',
+	privileged: false,
+	manager_resources: {
+		cpu_request: '100m',
+		memory_request: '128Mi',
+		cpu_limit: '500m',
+		memory_limit: '512Mi'
+	},
+	job_resources: {
+		cpu_request: '100m',
+		memory_request: '256Mi',
+		cpu_limit: '2',
+		memory_limit: '2Gi'
+	},
+	hpa: {
+		enabled: true,
+		min_replicas: 1,
+		max_replicas: 5,
+		cpu_target: 70,
+		memory_target: 80,
+		scale_up_window: 15,
+		scale_down_window: 300
+	},
+	pdb_enabled: true,
+	pdb_min_available: 1,
+	metrics_enabled: true,
+	service_monitor_enabled: false
+};
+
+const dindConfig: RunnerConfig = {
+	name: 'bates-dind',
+	type: 'dind',
+	tags: ['docker', 'dind', 'privileged'],
+	concurrent_jobs: 4,
+	run_untagged: false,
+	protected: false,
+	default_image: 'docker:27-dind',
+	privileged: true,
+	manager_resources: {
+		cpu_request: '200m',
+		memory_request: '256Mi',
+		cpu_limit: '1',
+		memory_limit: '1Gi'
+	},
+	job_resources: {
+		cpu_request: '500m',
+		memory_request: '1Gi',
+		cpu_limit: '4',
+		memory_limit: '8Gi'
+	},
+	hpa: {
+		enabled: true,
+		min_replicas: 1,
+		max_replicas: 3,
+		cpu_target: 70,
+		memory_target: 80,
+		scale_up_window: 15,
+		scale_down_window: 300
+	},
+	pdb_enabled: true,
+	pdb_min_available: 1,
+	metrics_enabled: true,
+	service_monitor_enabled: false
+};
+
+const rocky8Config: RunnerConfig = {
+	name: 'bates-rocky8',
+	type: 'rocky8',
+	tags: ['rocky8', 'rhel8', 'linux'],
+	concurrent_jobs: 4,
+	run_untagged: false,
+	protected: false,
+	default_image: 'rockylinux:8',
+	privileged: false,
+	manager_resources: {
+		cpu_request: '100m',
+		memory_request: '128Mi',
+		cpu_limit: '500m',
+		memory_limit: '512Mi'
+	},
+	job_resources: {
+		cpu_request: '100m',
+		memory_request: '256Mi',
+		cpu_limit: '2',
+		memory_limit: '2Gi'
+	},
+	hpa: {
+		enabled: true,
+		min_replicas: 1,
+		max_replicas: 3,
+		cpu_target: 70,
+		memory_target: 80,
+		scale_up_window: 15,
+		scale_down_window: 300
+	},
+	pdb_enabled: true,
+	pdb_min_available: 1,
+	metrics_enabled: true,
+	service_monitor_enabled: false
+};
+
+const rocky9Config: RunnerConfig = {
+	name: 'bates-rocky9',
+	type: 'rocky9',
+	tags: ['rocky9', 'rhel9', 'linux'],
+	concurrent_jobs: 4,
+	run_untagged: false,
+	protected: false,
+	default_image: 'rockylinux:9',
+	privileged: false,
+	manager_resources: {
+		cpu_request: '100m',
+		memory_request: '128Mi',
+		cpu_limit: '500m',
+		memory_limit: '512Mi'
+	},
+	job_resources: {
+		cpu_request: '100m',
+		memory_request: '256Mi',
+		cpu_limit: '2',
+		memory_limit: '2Gi'
+	},
+	hpa: {
+		enabled: true,
+		min_replicas: 1,
+		max_replicas: 3,
+		cpu_target: 70,
+		memory_target: 80,
+		scale_up_window: 15,
+		scale_down_window: 300
+	},
+	pdb_enabled: true,
+	pdb_min_available: 1,
+	metrics_enabled: true,
+	service_monitor_enabled: false
+};
+
+const nixConfig: RunnerConfig = {
+	name: 'bates-nix',
+	type: 'nix',
+	tags: ['nix', 'flakes'],
+	concurrent_jobs: 4,
+	run_untagged: false,
+	protected: false,
+	default_image: 'docker.nix-community.org/nixpkgs/nix-flakes:nixos-unstable',
+	privileged: false,
+	manager_resources: {
+		cpu_request: '100m',
+		memory_request: '128Mi',
+		cpu_limit: '500m',
+		memory_limit: '512Mi'
+	},
+	job_resources: {
+		cpu_request: '500m',
+		memory_request: '1Gi',
+		cpu_limit: '4',
+		memory_limit: '8Gi'
+	},
+	hpa: {
+		enabled: true,
+		min_replicas: 1,
+		max_replicas: 3,
+		cpu_target: 70,
+		memory_target: 80,
+		scale_up_window: 15,
+		scale_down_window: 300
+	},
+	pdb_enabled: true,
+	pdb_min_available: 1,
+	metrics_enabled: true,
+	service_monitor_enabled: false
+};
+
+export const MOCK_RUNNERS: RunnerInfo[] = [
+	{
+		id: 1001,
+		name: 'bates-docker',
+		type: 'docker',
+		status: 'online',
+		tags: dockerConfig.tags,
+		config: dockerConfig,
+		version: '17.8.0',
+		contacted_at: new Date().toISOString()
+	},
+	{
+		id: 1002,
+		name: 'bates-dind',
+		type: 'dind',
+		status: 'online',
+		tags: dindConfig.tags,
+		config: dindConfig,
+		version: '17.8.0',
+		contacted_at: new Date().toISOString()
+	},
+	{
+		id: 1003,
+		name: 'bates-rocky8',
+		type: 'rocky8',
+		status: 'online',
+		tags: rocky8Config.tags,
+		config: rocky8Config,
+		version: '17.8.0',
+		contacted_at: new Date().toISOString()
+	},
+	{
+		id: 1004,
+		name: 'bates-rocky9',
+		type: 'rocky9',
+		status: 'online',
+		tags: rocky9Config.tags,
+		config: rocky9Config,
+		version: '17.8.0',
+		contacted_at: new Date().toISOString()
+	},
+	{
+		id: 1005,
+		name: 'bates-nix',
+		type: 'nix',
+		status: 'online',
+		tags: nixConfig.tags,
+		config: nixConfig,
+		version: '17.8.0',
+		contacted_at: new Date().toISOString()
+	}
+];
+
+export const MOCK_RUNNER_MAP = Object.fromEntries(MOCK_RUNNERS.map((r) => [r.name, r]));

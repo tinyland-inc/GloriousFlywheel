@@ -7,10 +7,11 @@ load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 # Package visibility
 package(default_visibility = ["//visibility:public"])
 
-# Export Kubernetes manifests for validation
+# Export files needed by sub-packages
 exports_files([
     "flake.nix",
     "flake.lock",
+    ".npmrc",
 ])
 
 # Filegroup for all Kubernetes manifests
@@ -56,4 +57,10 @@ pkg_tar(
 alias(
     name = "all",
     actual = ":deployment_bundle",
+)
+
+# Runner Dashboard app alias
+alias(
+    name = "app",
+    actual = "//app:build",
 )

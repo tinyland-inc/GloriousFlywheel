@@ -1,0 +1,224 @@
+# Runner Dashboard Stack - OpenTofu Commands
+# =============================================
+#
+# Task automation for deploying the GitLab Runner Dashboard.
+#
+# Usage:
+#   just init         # Initialize OpenTofu
+#   just plan         # Plan deployment
+#   just deploy       # Apply deployment
+#   just status       # Check dashboard status
+#
+# Environment Selection:
+#   ENV=rigel just plan    # Target rigel cluster
+#   ENV=beehive just plan  # Target beehive (default)
+
+# Default recipe - list available commands
+default:
+    @just --list
+
+# =============================================================================
+# Configuration
+# =============================================================================
+
+# Environment: beehive (dev) or rigel (staging/prod)
+env := env_var_or_default("ENV", "beehive")
+tfvars := env + ".tfvars"
+namespace := "runner-dashboard"
+
+# GitLab project settings
+gitlab_project := "78189586"
+gitlab_api := "https://gitlab.com/api/v4"
+
+# Kubernetes context (GitLab Agent)
+kube_context := if env == "beehive" {
+    "bates-ils/projects/kubernetes/gitlab-agents:beehive"
+} else {
+    "bates-ils/projects/kubernetes/gitlab-agents:rigel"
+}
+
+# State name for GitLab backend
+state_name := "runner-dashboard-" + env
+
+# =============================================================================
+# Deployment Commands
+# =============================================================================
+
+# Initialize OpenTofu with GitLab backend
+init:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "=== Initializing Runner Dashboard ({{env}}) ==="
+
+    if [ -z "${TF_HTTP_PASSWORD:-}" ]; then
+        echo "WARNING: TF_HTTP_PASSWORD not set (required for GitLab state backend)"
+        echo "For local development, run: export TF_HTTP_PASSWORD='glpat-...'"
+    fi
+
+    tofu init -reconfigure \
+        -backend-config="address={{gitlab_api}}/projects/{{gitlab_project}}/terraform/state/{{state_name}}" \
+        -backend-config="lock_address={{gitlab_api}}/projects/{{gitlab_project}}/terraform/state/{{state_name}}/lock" \
+        -backend-config="unlock_address={{gitlab_api}}/projects/{{gitlab_project}}/terraform/state/{{state_name}}/lock" \
+        -backend-config="lock_method=POST" \
+        -backend-config="unlock_method=DELETE" \
+        -backend-config="username=gitlab-ci-token" \
+        -backend-config="password=${TF_HTTP_PASSWORD:-}"
+
+# Plan deployment
+plan:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "=== Planning Runner Dashboard ({{env}}) ==="
+    tofu plan \
+        -var="cluster_context={{kube_context}}" \
+        -var-file="{{tfvars}}" \
+        -out=tfplan
+    echo ""
+    echo "Plan saved to: tfplan"
+    echo "Run 'just apply' to apply changes"
+
+# Apply deployment (uses saved plan)
+apply:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -f tfplan ]; then
+        echo "ERROR: No plan file found. Run 'just plan' first."
+        exit 1
+    fi
+    echo "=== Applying Runner Dashboard ({{env}}) ==="
+    tofu apply tfplan
+
+# Plan and apply in one step
+deploy: plan apply
+
+# Full deploy cycle: init, plan, deploy
+full: init plan apply
+
+# =============================================================================
+# Destruction (with safety)
+# =============================================================================
+
+# Destroy dashboard (with confirmation)
+destroy:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "WARNING: This will destroy the runner dashboard in {{namespace}} ({{env}})!"
+    read -p "Type 'yes' to confirm: " confirm
+    if [ "$confirm" != "yes" ]; then
+        echo "Aborted."
+        exit 1
+    fi
+    tofu destroy \
+        -var="cluster_context={{kube_context}}" \
+        -var-file="{{tfvars}}"
+
+# =============================================================================
+# Status Commands
+# =============================================================================
+
+# Show dashboard status
+status:
+    @echo "=== Runner Dashboard in {{namespace}} ({{env}}) ==="
+    @echo ""
+    @echo "=== Pods ==="
+    @kubectl get pods -n {{namespace}} -o wide 2>/dev/null || echo "No pods found"
+    @echo ""
+    @echo "=== Deployment ==="
+    @kubectl get deployments -n {{namespace}} 2>/dev/null || echo "No deployments found"
+    @echo ""
+    @echo "=== Service ==="
+    @kubectl get svc -n {{namespace}} 2>/dev/null || echo "No services found"
+    @echo ""
+    @echo "=== Ingress ==="
+    @kubectl get ingress -n {{namespace}} 2>/dev/null || echo "No ingress found"
+
+# Show detailed status
+status-detailed:
+    @echo "=== Runner Dashboard Detailed Status ({{env}}) ==="
+    @echo ""
+    @echo "=== Pod Resources ==="
+    @kubectl top pods -n {{namespace}} 2>/dev/null || echo "Metrics not available"
+    @echo ""
+    @echo "=== RBAC ==="
+    @kubectl get serviceaccount -n {{namespace}} 2>/dev/null || echo "No service accounts found"
+    @kubectl get clusterrolebinding runner-dashboard-reader 2>/dev/null || echo "No ClusterRoleBinding found"
+    @echo ""
+    @echo "=== Events ==="
+    @kubectl get events -n {{namespace}} --sort-by='.lastTimestamp' 2>/dev/null | tail -10
+
+# Show dashboard logs
+logs:
+    kubectl logs -n {{namespace}} -l app.kubernetes.io/name=runner-dashboard -f --tail=100
+
+# Describe dashboard pod
+describe:
+    kubectl describe pod -n {{namespace}} -l app.kubernetes.io/name=runner-dashboard
+
+# Get events
+events:
+    kubectl get events -n {{namespace}} --sort-by='.lastTimestamp'
+
+# =============================================================================
+# Validation & Utilities
+# =============================================================================
+
+# Validate configuration
+validate:
+    tofu validate
+
+# Format files
+fmt:
+    tofu fmt -recursive
+
+# Check formatting without changes
+fmt-check:
+    tofu fmt -recursive -check
+
+# =============================================================================
+# State Management
+# =============================================================================
+
+# Show current state
+state:
+    tofu state list
+
+# Refresh state
+refresh:
+    tofu refresh -var="cluster_context={{kube_context}}" -var-file={{tfvars}}
+
+# Unlock stuck state
+state-unlock:
+    #!/usr/bin/env bash
+    echo "Unlocking state: {{state_name}}"
+    curl -X DELETE -H "PRIVATE-TOKEN: ${TF_HTTP_PASSWORD}" \
+        "{{gitlab_api}}/projects/{{gitlab_project}}/terraform/state/{{state_name}}/lock"
+
+# Clean up local files
+clean:
+    rm -rf .terraform/ tfplan plan.json
+
+# =============================================================================
+# Debugging
+# =============================================================================
+
+# Show environment info
+info:
+    @echo "Stack:       runner-dashboard"
+    @echo "Environment: {{env}}"
+    @echo "State name:  {{state_name}}"
+    @echo "Namespace:   {{namespace}}"
+    @echo "Tfvars:      {{tfvars}}"
+    @echo "K8s context: {{kube_context}}"
+
+# Check health endpoint
+health-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    URL="https://runner-dashboard.{{env}}.bates.edu/api/health"
+    echo "Checking: $URL"
+    curl -s -o /dev/null -w "HTTP %{http_code}\n" "$URL" || echo "Health check failed"
+
+# Port forward for local testing
+port-forward:
+    @echo "Forwarding runner-dashboard to localhost:3000..."
+    kubectl port-forward -n {{namespace}} svc/runner-dashboard 3000:80

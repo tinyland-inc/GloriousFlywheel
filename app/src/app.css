@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+@import '@skeletonlabs/skeleton/optional/presets';
+@import '@skeletonlabs/skeleton';
+
+@source '../node_modules/@skeletonlabs/skeleton-svelte/dist';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+html,
+body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}

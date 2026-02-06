@@ -91,5 +91,16 @@ build:ci-cached --config=ci-internal
 # Memory optimization for large builds
 startup --host_jvm_args=-Xmx4g
 
+# =============================================================================
+# JavaScript / SvelteKit Build Settings
+# =============================================================================
+# Settings for rules_js and the Runner Dashboard app
+
+# Allow pnpm/node to create symlinks in sandbox
+build --experimental_allow_unresolved_symlinks
+
+# Increase NodeJS heap for SvelteKit builds
+build --action_env=NODE_OPTIONS=--max-old-space-size=4096
+
 # Import user-specific settings if present
 try-import %workspace%/user.bazelrc

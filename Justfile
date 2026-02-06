@@ -360,7 +360,7 @@ k8s-operators:
     @kubectl get pods -n cnpg-system 2>/dev/null || echo "Not installed"
 
 # =============================================================================
-# GitLab Runners (Shortcut Commands)
+# GitLab Runners (Legacy - Shortcut Commands)
 # =============================================================================
 
 # Initialize GitLab runners stack
@@ -387,6 +387,51 @@ runners-status:
 # Show runner logs
 runners-logs runner="nix-runner":
     kubectl logs -n gitlab-runners -l release={{runner}} -f --tail=100
+
+# =============================================================================
+# Bates ILS Runners (New Unified Infrastructure)
+# =============================================================================
+
+# Initialize Bates ILS runners stack
+ils-runners-init: (tofu-init "bates-ils-runners")
+
+# Plan Bates ILS runners deployment
+ils-runners-plan: (tofu-plan "bates-ils-runners")
+
+# Apply Bates ILS runners deployment
+ils-runners-apply: (tofu-apply "bates-ils-runners")
+
+# Full deploy cycle for Bates ILS runners
+ils-runners-deploy: (tofu-deploy "bates-ils-runners")
+
+# Show Bates ILS runner status
+ils-runners-status:
+    @echo "=== Bates ILS Runners Status ({{env}}) ==="
+    @echo ""
+    @echo "=== Pods ==="
+    @kubectl get pods -n bates-ils-runners -o wide 2>/dev/null || echo "No pods found"
+    @echo ""
+    @echo "=== HPA ==="
+    @kubectl get hpa -n bates-ils-runners 2>/dev/null || echo "No HPA found"
+    @echo ""
+    @echo "=== Helm Releases ==="
+    @helm list -n bates-ils-runners 2>/dev/null || echo "No helm releases"
+
+# Show Bates ILS runner logs
+ils-runners-logs runner="bates-docker":
+    kubectl logs -n bates-ils-runners -l release={{runner}} -f --tail=100
+
+# Show all Bates ILS runner types
+ils-runners-summary:
+    @echo "=== Bates ILS Runner Types ==="
+    @echo ""
+    @echo "bates-docker  : Standard builds (tags: docker, linux, amd64)"
+    @echo "bates-dind    : Container builds (tags: docker, dind, privileged)"
+    @echo "bates-rocky8  : RHEL 8 compat (tags: rocky8, rhel8, linux)"
+    @echo "bates-rocky9  : RHEL 9 compat (tags: rocky9, rhel9, linux)"
+    @echo "bates-nix     : Nix builds (tags: nix, flakes)"
+    @echo ""
+    @echo "Documentation: docs/runners/README.md"
 
 # =============================================================================
 # Attic Cache (Shortcut Commands)
@@ -511,3 +556,74 @@ ci-local: fmt-check nix-check nix-build tofu-validate-all
 # Run CI health check (quick mode, no K8s checks)
 ci-health endpoint="https://attic-cache.{{ingress_domain}}":
     ./scripts/health-check.sh -u {{endpoint}} -m 5 -d 10 -M 30
+
+# =============================================================================
+# Runner Dashboard App
+# =============================================================================
+
+# Install app dependencies
+app-install:
+    cd app && pnpm install
+
+# Run app dev server
+app-dev:
+    cd app && pnpm dev
+
+# Build app for production
+app-build:
+    cd app && pnpm build
+
+# Run app tests
+app-test:
+    cd app && pnpm test
+
+# Run app type check
+app-check:
+    cd app && pnpm check
+
+# Run app linter
+app-lint:
+    cd app && pnpm lint
+
+# Build app via Bazel
+app-bazel-build:
+    bazel build //app:build
+
+# Run app dev server via Bazel
+app-bazel-dev:
+    bazel run //app:dev
+
+# Build app OCI image via Nix
+app-image:
+    nix build .#runner-dashboard-image
+
+# Show app status on cluster
+app-status:
+    @echo "=== Runner Dashboard Status ({{env}}) ==="
+    @kubectl get pods -n runner-dashboard -o wide 2>/dev/null || echo "No pods found"
+    @echo ""
+    @kubectl get ingress -n runner-dashboard 2>/dev/null || echo "No ingress found"
+
+# Initialize runner-dashboard OpenTofu stack
+app-init:
+    cd tofu/stacks/runner-dashboard && just env={{env}} init
+
+# Plan runner-dashboard deployment
+app-plan:
+    cd tofu/stacks/runner-dashboard && just env={{env}} plan
+
+# Apply runner-dashboard deployment
+app-apply:
+    cd tofu/stacks/runner-dashboard && just env={{env}} apply
+
+# Full deploy cycle: build image, push, tofu apply
+app-deploy: app-build app-image
+    cd tofu/stacks/runner-dashboard && just env={{env}} deploy
+
+# Show runner-dashboard logs
+app-logs:
+    cd tofu/stacks/runner-dashboard && just env={{env}} logs
+
+# Port-forward runner-dashboard for local testing
+app-port-forward:
+    cd tofu/stacks/runner-dashboard && just env={{env}} port-forward

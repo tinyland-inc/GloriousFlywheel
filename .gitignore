@@ -62,6 +62,12 @@ Thumbs.db
 *.tar.gz
 *.zip
 
+# Node.js / SvelteKit
+node_modules/
+app/build/
+app/.svelte-kit/
+pnpm-debug.log*
+
 # Logs
 *.log
 

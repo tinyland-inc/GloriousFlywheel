@@ -1,0 +1,46 @@
+load("@aspect_rules_js//js:defs.bzl", "js_run_binary", "js_run_devserver")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+
+# Link all npm packages into this workspace
+npm_link_all_packages(name = "node_modules")
+
+# Source filegroup for cache invalidation
+filegroup(
+    name = "srcs",
+    srcs = glob(
+        ["src/**"],
+        exclude = ["src/**/*.test.ts"],
+    ) + [
+        "package.json",
+        "svelte.config.js",
+        "tsconfig.json",
+        "vite.config.ts",
+    ],
+)
+
+# Production build via Vite
+js_run_binary(
+    name = "build",
+    srcs = [
+        ":node_modules",
+        ":srcs",
+        "//:.npmrc",
+    ],
+    args = ["build"],
+    chdir = package_name(),
+    out_dirs = ["build"],
+    tool = ":node_modules/vite/bin/vite.js",
+    visibility = ["//visibility:public"],
+)
+
+# Development server
+js_run_devserver(
+    name = "dev",
+    args = ["dev"],
+    chdir = package_name(),
+    data = [
+        ":node_modules",
+        ":srcs",
+    ],
+    tool = ":node_modules/vite/bin/vite.js",
+)
