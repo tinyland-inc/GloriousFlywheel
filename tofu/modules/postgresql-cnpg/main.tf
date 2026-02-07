@@ -81,7 +81,7 @@ resource "random_password" "app_password" {
 
   length           = 32
   special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  override_special = "!$%()*-_=+[]"
 }
 
 # =============================================================================

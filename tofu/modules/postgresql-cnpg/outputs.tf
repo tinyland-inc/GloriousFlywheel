@@ -86,13 +86,13 @@ output "app_password" {
 
 output "database_url" {
   description = "Full DATABASE_URL for application configuration (sensitive)"
-  value       = "postgresql://${var.owner_name}:${var.generate_password ? random_password.app_password[0].result : var.app_password}@${var.name}-rw.${var.namespace}.svc.cluster.local:5432/${var.database_name}?sslmode=require"
+  value       = "postgresql://${var.owner_name}:${urlencode(var.generate_password ? random_password.app_password[0].result : var.app_password)}@${var.name}-rw.${var.namespace}.svc.cluster.local:5432/${var.database_name}?sslmode=require"
   sensitive   = true
 }
 
 output "database_url_ro" {
   description = "Read-only DATABASE_URL for application configuration (sensitive)"
-  value       = "postgresql://${var.owner_name}:${var.generate_password ? random_password.app_password[0].result : var.app_password}@${var.name}-ro.${var.namespace}.svc.cluster.local:5432/${var.database_name}?sslmode=require"
+  value       = "postgresql://${var.owner_name}:${urlencode(var.generate_password ? random_password.app_password[0].result : var.app_password)}@${var.name}-ro.${var.namespace}.svc.cluster.local:5432/${var.database_name}?sslmode=require"
   sensitive   = true
 }
 

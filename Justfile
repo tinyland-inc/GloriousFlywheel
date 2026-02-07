@@ -43,6 +43,58 @@ kube_context := if env == "beehive" {
 # Ingress domain based on environment
 ingress_domain := if env == "beehive" { "beehive.bates.edu" } else { "rigel.bates.edu" }
 
+# SOCKS proxy port (xoxd-bates → Bates internal network)
+socks_port := "1080"
+socks_proxy := "socks5h://localhost:" + socks_port
+
+# =============================================================================
+# Bates Network Proxy
+# =============================================================================
+
+# Start SOCKS proxy to Bates internal network via xoxd-bates
+proxy-up:
+    @if ssh -O check bates-socks 2>/dev/null; then \
+        echo "Proxy already running on localhost:{{socks_port}}"; \
+    else \
+        echo "Starting SOCKS proxy on localhost:{{socks_port}} via xoxd-bates..."; \
+        ssh -fN bates-socks; \
+        echo "Proxy up. Use: HTTPS_PROXY={{socks_proxy}} kubectl ..."; \
+    fi
+
+# Stop SOCKS proxy
+proxy-down:
+    @ssh -O exit bates-socks 2>/dev/null && echo "Proxy stopped" || echo "Proxy not running"
+
+# Check SOCKS proxy status
+proxy-status:
+    @if ssh -O check bates-socks 2>/dev/null; then \
+        echo "Proxy: RUNNING on localhost:{{socks_port}}"; \
+        echo "Test:  HTTPS_PROXY={{socks_proxy}} curl -sI https://rancher2.bates.edu"; \
+    else \
+        echo "Proxy: NOT RUNNING"; \
+        echo "Start: just proxy-up"; \
+    fi
+
+# Run kubectl through Bates proxy (auto-starts proxy if needed)
+bk *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! ssh -O check bates-socks 2>/dev/null; then
+        echo "Starting proxy..." >&2
+        ssh -fN bates-socks
+    fi
+    HTTPS_PROXY={{socks_proxy}} KUBECONFIG={{justfile_directory()}}/kubeconfig-beehive kubectl {{args}}
+
+# Run curl through Bates proxy
+bcurl *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! ssh -O check bates-socks 2>/dev/null; then
+        echo "Starting proxy..." >&2
+        ssh -fN bates-socks
+    fi
+    HTTPS_PROXY={{socks_proxy}} curl {{args}}
+
 # =============================================================================
 # Development Workflows
 # =============================================================================
