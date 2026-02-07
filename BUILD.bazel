@@ -12,6 +12,7 @@ exports_files([
     "flake.nix",
     "flake.lock",
     ".npmrc",
+    ".gitignore",
 ])
 
 # Filegroup for all Kubernetes manifests
@@ -27,6 +28,12 @@ filegroup(
         "flake.lock",
         "flake.nix",
     ] + glob(["nix/**/*.nix"]),
+)
+
+# Filegroup for .gitignore
+filegroup(
+    name = "gitignore",
+    srcs = [".gitignore"],
 )
 
 # Filegroup for GitLab CI configuration
