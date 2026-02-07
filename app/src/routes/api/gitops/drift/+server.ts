@@ -10,9 +10,7 @@ import { readFileSync } from "fs";
 import { resolve } from "path";
 
 function mapHPA(k8s: K8sHPA): HPAStatus {
-  const cpuMetric = k8s.spec.metrics?.find(
-    (m) => m.resource?.name === "cpu",
-  );
+  const cpuMetric = k8s.spec.metrics?.find((m) => m.resource?.name === "cpu");
   const memMetric = k8s.spec.metrics?.find(
     (m) => m.resource?.name === "memory",
   );
