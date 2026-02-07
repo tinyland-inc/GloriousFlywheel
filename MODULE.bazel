@@ -35,18 +35,15 @@ bazel_dep(name = "rules_nodejs", version = "6.7.3")
 # Translate pnpm-lock.yaml into Bazel-managed node_modules
 
 npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm", dev_dependency = True)
-
 npm.npm_translate_lock(
     name = "npm",
     pnpm_lock = "//:pnpm-lock.yaml",
     verify_node_modules_ignored = ".bazelignore",
 )
-
 use_repo(npm, "npm")
 
 # Node.js toolchain (from rules_nodejs)
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node", dev_dependency = True)
-
 node.toolchain(
     name = "nodejs",
     node_version = "22.13.1",
@@ -80,7 +77,6 @@ nix_repo.file(
     file = "//:flake.lock",
     file_deps = ["//:flake.nix"],
 )
-
 use_repo(nix_repo, "nixpkgs")
 
 # =============================================================================
@@ -110,7 +106,6 @@ nix_pkg.package(
     attribute_path = "yq-go",
     repository = "@nixpkgs",
 )
-
 use_repo(nix_pkg, "kubectl", "tofu", "yq")
 
 # =============================================================================

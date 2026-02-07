@@ -18,8 +18,8 @@ sh_test(
     srcs = ["tofu_validate.sh"],
     data = ["//:tofu_files"],
     tags = [
-        "tofu",
         "external",
+        "tofu",
     ],
 )
 

@@ -24,15 +24,18 @@ filegroup(
 filegroup(
     name = "nix_files",
     srcs = [
-        "flake.nix",
         "flake.lock",
+        "flake.nix",
     ] + glob(["nix/**/*.nix"]),
 )
 
 # Filegroup for GitLab CI configuration
 filegroup(
     name = "gitlab_ci",
-    srcs = glob([".gitlab-ci.yml", ".gitlab/ci/**/*.yml"]),
+    srcs = glob([
+        ".gitlab-ci.yml",
+        ".gitlab/ci/**/*.yml",
+    ]),
 )
 
 # Filegroup for OpenTofu configuration

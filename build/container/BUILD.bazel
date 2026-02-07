@@ -9,7 +9,10 @@ package(default_visibility = ["//visibility:public"])
 filegroup(
     name = "container_configs",
     srcs = glob(
-        ["*.yaml", "*.json"],
+        [
+            "*.yaml",
+            "*.json",
+        ],
         allow_empty = True,
     ),
 )
