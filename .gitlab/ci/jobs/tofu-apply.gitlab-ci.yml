@@ -93,37 +93,37 @@
         VAR_FLAGS+=(-var="database_url=${ATTIC_DATABASE_URL}")
       fi
 
-      # Import pre-existing cluster resources if state is empty
-      # (grep -q . checks for any non-empty output from state list)
+      # Adopt pre-existing cluster resources if state is empty
+      # Strategy: import shared operators, clean stale app namespace, let tofu recreate
       if ! tofu state list 2>/dev/null | grep -q .; then
         echo ""
-        echo "Empty state detected — importing pre-existing resources..."
+        echo "Empty state detected — adopting pre-existing resources..."
         NS="${TF_VAR_namespace:-attic-cache}"
-        # Import namespace if it exists in cluster
-        if kubectl get namespace "$NS" >/dev/null 2>&1; then
-          echo "  Importing namespace $NS"
-          tofu import "${VAR_FLAGS[@]}" 'kubernetes_namespace.nix_cache[0]' "$NS" || true
-        fi
-        # Import shared operator namespaces
+
+        # 1. Import shared operator resources (persist across environments)
         if kubectl get namespace cnpg-system >/dev/null 2>&1; then
           echo "  Importing cnpg-system namespace"
           tofu import "${VAR_FLAGS[@]}" 'module.cnpg_operator[0].kubernetes_namespace.cnpg_system[0]' cnpg-system || true
         fi
-        if kubectl get namespace minio-operator >/dev/null 2>&1; then
-          echo "  Importing minio-operator namespace"
-          tofu import "${VAR_FLAGS[@]}" 'module.minio_operator[0].kubernetes_namespace.minio_operator[0]' minio-operator || true
-        fi
-        # Import helm releases via secret labels (helm stores state as k8s secrets)
         if kubectl get secret -n minio-operator -l owner=helm,name=minio-operator >/dev/null 2>&1; then
           echo "  Importing minio-operator helm release"
           tofu import "${VAR_FLAGS[@]}" 'module.minio_operator[0].helm_release.minio_operator[0]' minio-operator/minio-operator || true
         fi
-        CNPG_SECRET=$(kubectl get secret -n cnpg-system -l owner=helm -o jsonpath='{.items[0].metadata.labels.name}' 2>/dev/null || true)
-        if [ -n "$CNPG_SECRET" ]; then
-          echo "  Importing CNPG helm release: $CNPG_SECRET"
-          tofu import "${VAR_FLAGS[@]}" 'module.cnpg_operator[0].helm_release.cnpg[0]' "cnpg-system/$CNPG_SECRET" || true
+        if kubectl get secret -n cnpg-system -l owner=helm,name=cnpg >/dev/null 2>&1; then
+          echo "  Importing CNPG helm release"
+          tofu import "${VAR_FLAGS[@]}" 'module.cnpg_operator[0].helm_release.cnpg' cnpg-system/cnpg || true
         fi
-        echo "  Import phase complete"
+
+        # 2. Delete stale app namespace so tofu can create fresh
+        #    Review environments are ephemeral — no data loss concern
+        if kubectl get namespace "$NS" >/dev/null 2>&1; then
+          echo ""
+          echo "  Deleting stale app namespace $NS for clean deployment..."
+          kubectl delete namespace "$NS" --wait=true --timeout=120s || true
+          echo "  Namespace deleted"
+        fi
+
+        echo "  Adoption phase complete"
       fi
 
       # Refresh state to sync any external changes or imports
