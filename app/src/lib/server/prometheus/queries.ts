@@ -52,6 +52,32 @@ export const QUERIES = {
 
   // Active alerts
   activeAlerts: () => `ALERTS{namespace="${NS}", alertstate="firing"}`,
+
+  // Enrollment metrics
+  quotaUsage: (resource: string) =>
+    `kube_resourcequota{namespace="${NS}", resource="${resource}", type="used"} / kube_resourcequota{namespace="${NS}", resource="${resource}", type="hard"}`,
+
+  pendingJobs: () =>
+    `sum(gitlab_runner_jobs{state="pending", namespace="${NS}"}) or vector(0)`,
+
+  orphanedNamespaces: () =>
+    `count(kube_namespace_labels{namespace=~"ci-job-.*"}) - count(kube_pod_info{namespace=~"ci-job-.*"}) or vector(0)`,
+
+  // Recording rule references (pre-computed)
+  jobsPerMinute: (runner?: string) =>
+    runner
+      ? `bates_ils:runner_jobs_per_minute:rate5m{runner="${runner}"}`
+      : `sum(bates_ils:runner_jobs_per_minute:rate5m)`,
+
+  recordedSuccessRate: (runner?: string) =>
+    runner
+      ? `bates_ils:runner_success_rate:rate1h{runner="${runner}"}`
+      : `avg(bates_ils:runner_success_rate:rate1h)`,
+
+  hpaUtilization: (runner?: string) =>
+    runner
+      ? `bates_ils:runner_hpa_utilization{runner="${runner}"}`
+      : `avg(bates_ils:runner_hpa_utilization)`,
 } as const;
 
 // Time window presets (in seconds)

@@ -1,0 +1,160 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus"
+    }
+  ],
+  "id": null,
+  "uid": "bates-ils-runners",
+  "title": "Bates ILS Runner Pool",
+  "description": "Self-service HPA runner pool metrics for the bates-ils GitLab group",
+  "tags": ["gitlab", "runners", "bates-ils"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "runner",
+        "type": "query",
+        "query": "label_values(gitlab_runner_jobs_total{namespace=\"bates-ils-runners\"}, runner)",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Jobs Per Minute",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(bates_ils:runner_jobs_per_minute:rate5m{runner=~\"$runner\"})",
+          "legendFormat": "Jobs/min"
+        }
+      ]
+    },
+    {
+      "title": "Success Rate",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "avg(bates_ils:runner_success_rate:rate1h{runner=~\"$runner\"})",
+          "legendFormat": "Success %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "unit": "percentunit",
+          "thresholds": {
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.9, "color": "yellow" },
+              { "value": 0.95, "color": "green" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Pending Jobs",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(gitlab_runner_jobs{state=\"pending\", namespace=\"bates-ils-runners\"}) or vector(0)",
+          "legendFormat": "Pending"
+        }
+      ]
+    },
+    {
+      "title": "HPA Utilization",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        {
+          "expr": "avg(bates_ils:runner_hpa_utilization{runner=~\"$runner\"})",
+          "legendFormat": "HPA %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "unit": "percentunit"
+        }
+      }
+    },
+    {
+      "title": "Jobs Over Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        {
+          "expr": "sum(rate(gitlab_runner_jobs_total{namespace=\"bates-ils-runners\", runner=~\"$runner\"}[5m])) by (runner) * 60",
+          "legendFormat": "{{ runner }}"
+        }
+      ]
+    },
+    {
+      "title": "CPU Usage by Runner",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"bates-ils-runners\", pod=~\"$runner.*\"}[5m])) by (pod)",
+          "legendFormat": "{{ pod }}"
+        }
+      ]
+    },
+    {
+      "title": "Quota Usage",
+      "type": "bargauge",
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 12 },
+      "targets": [
+        {
+          "expr": "kube_resourcequota{namespace=\"bates-ils-runners\", type=\"used\"} / kube_resourcequota{namespace=\"bates-ils-runners\", type=\"hard\"}",
+          "legendFormat": "{{ resource }}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 1,
+          "unit": "percentunit"
+        }
+      }
+    },
+    {
+      "title": "Active Alerts",
+      "type": "table",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        {
+          "expr": "ALERTS{namespace=\"bates-ils-runners\", alertstate=\"firing\"}",
+          "format": "table",
+          "instant": true
+        }
+      ]
+    }
+  ]
+}

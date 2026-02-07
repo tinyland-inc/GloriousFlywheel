@@ -108,6 +108,8 @@ service_monitor_labels = {
   "prometheus" = "kube-prometheus"
 }
 
+enrollment_alerts_enabled = true
+
 # =============================================================================
 # Manager Pod Resources
 # =============================================================================

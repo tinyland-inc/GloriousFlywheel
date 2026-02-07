@@ -194,9 +194,10 @@ module "docker_runner" {
   pdb_min_available = 1
 
   # Monitoring
-  metrics_enabled         = var.metrics_enabled
-  service_monitor_enabled = var.service_monitor_enabled
-  service_monitor_labels  = var.service_monitor_labels
+  metrics_enabled           = var.metrics_enabled
+  service_monitor_enabled   = var.service_monitor_enabled
+  service_monitor_labels    = var.service_monitor_labels
+  enrollment_alerts_enabled = var.enrollment_alerts_enabled
 }
 
 # =============================================================================
@@ -312,9 +313,10 @@ module "rocky8_runner" {
   pdb_min_available = 1
 
   # Monitoring
-  metrics_enabled         = var.metrics_enabled
-  service_monitor_enabled = var.service_monitor_enabled
-  service_monitor_labels  = var.service_monitor_labels
+  metrics_enabled           = var.metrics_enabled
+  service_monitor_enabled   = var.service_monitor_enabled
+  service_monitor_labels    = var.service_monitor_labels
+  enrollment_alerts_enabled = var.enrollment_alerts_enabled
 }
 
 # =============================================================================
@@ -369,9 +371,10 @@ module "rocky9_runner" {
   pdb_min_available = 1
 
   # Monitoring
-  metrics_enabled         = var.metrics_enabled
-  service_monitor_enabled = var.service_monitor_enabled
-  service_monitor_labels  = var.service_monitor_labels
+  metrics_enabled           = var.metrics_enabled
+  service_monitor_enabled   = var.service_monitor_enabled
+  service_monitor_labels    = var.service_monitor_labels
+  enrollment_alerts_enabled = var.enrollment_alerts_enabled
 }
 
 # =============================================================================
@@ -434,7 +437,8 @@ module "nix_runner" {
   pdb_min_available = 1
 
   # Monitoring
-  metrics_enabled         = var.metrics_enabled
-  service_monitor_enabled = var.service_monitor_enabled
-  service_monitor_labels  = var.service_monitor_labels
+  metrics_enabled           = var.metrics_enabled
+  service_monitor_enabled   = var.service_monitor_enabled
+  service_monitor_labels    = var.service_monitor_labels
+  enrollment_alerts_enabled = var.enrollment_alerts_enabled
 }

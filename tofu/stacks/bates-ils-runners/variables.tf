@@ -618,3 +618,9 @@ variable "service_monitor_labels" {
     "prometheus" = "kube-prometheus"
   }
 }
+
+variable "enrollment_alerts_enabled" {
+  description = "Enable enrollment-specific alerts (quota exhaustion, namespace leak, queue backlog)"
+  type        = bool
+  default     = false
+}
