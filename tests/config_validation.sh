@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Resolve REPO_ROOT: prefer Bazel runfiles, fall back to dirname for manual runs
-if [[ -n "${TEST_SRCDIR:-}" && -n "${TEST_WORKSPACE:-}" ]]; then
+if [[ -n ${TEST_SRCDIR:-} && -n ${TEST_WORKSPACE:-} ]]; then
   # Running inside Bazel sandbox - data files are in runfiles
   REPO_ROOT="${TEST_SRCDIR}/${TEST_WORKSPACE}"
   IN_BAZEL=1
