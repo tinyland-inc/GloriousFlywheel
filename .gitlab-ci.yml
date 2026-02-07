@@ -110,6 +110,8 @@ include:
   - local: ".gitlab/ci/templates/verify-health.gitlab-ci.yml"
   # Runner smoke tests (manual trigger)
   - local: ".gitlab/ci/jobs/smoke-tests.gitlab-ci.yml"
+  # Runner deployment pipeline (beehive + rigel)
+  - local: ".gitlab/ci/jobs/runners-deploy.gitlab-ci.yml"
 
 # ==============================================================================
 # Verify Stage - Health Checks

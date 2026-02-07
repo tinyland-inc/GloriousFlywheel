@@ -421,6 +421,18 @@ ils-runners-status:
 ils-runners-logs runner="bates-docker":
     kubectl logs -n bates-ils-runners -l release={{runner}} -f --tail=100
 
+# Run runner pool health check
+ils-runners-health:
+    ./scripts/runner-health-check.sh
+
+# Run security isolation audit
+ils-runners-audit:
+    ./tests/security/isolation-audit.sh
+
+# Promote from beehive to rigel
+ils-runners-promote: (tofu-plan "bates-ils-runners")
+    @echo "Plan generated for rigel. Review and run 'just ils-runners-apply' with ENV=rigel to promote."
+
 # Show all Bates ILS runner types
 ils-runners-summary:
     @echo "=== Bates ILS Runner Types ==="
