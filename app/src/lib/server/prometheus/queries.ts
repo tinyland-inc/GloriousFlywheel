@@ -64,7 +64,7 @@ export const QUERIES = {
     `count(kube_namespace_labels{namespace=~"ci-job-.*"}) - count(kube_pod_info{namespace=~"ci-job-.*"}) or vector(0)`,
 
   // Recording rule references (pre-computed)
-  jobsPerMinute: (runner?: string) =>
+  recordedJobsPerMinute: (runner?: string) =>
     runner
       ? `bates_ils:runner_jobs_per_minute:rate5m{runner="${runner}"}`
       : `sum(bates_ils:runner_jobs_per_minute:rate5m)`,

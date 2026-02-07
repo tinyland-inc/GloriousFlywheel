@@ -108,6 +108,8 @@ include:
   - local: ".gitlab/ci/jobs/bazel-build.gitlab-ci.yml"
   # Health check template
   - local: ".gitlab/ci/templates/verify-health.gitlab-ci.yml"
+  # Runner smoke tests (manual trigger)
+  - local: ".gitlab/ci/jobs/smoke-tests.gitlab-ci.yml"
 
 # ==============================================================================
 # Verify Stage - Health Checks

@@ -1,0 +1,88 @@
+# Smoke Tests - Validate all 5 runner types
+#
+# Manual trigger on main branch to verify runner pool health.
+
+smoke:docker:
+  stage: test
+  tags:
+    - docker
+    - linux
+    - amd64
+  image: alpine:3.21
+  script:
+    - apk add --no-cache curl
+    - curl -sSf https://gitlab.com > /dev/null
+    - echo "PASS: docker runner is functional"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+
+smoke:dind:
+  stage: test
+  tags:
+    - dind
+    - privileged
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_HOST: tcp://localhost:2375
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - |
+      for i in $(seq 1 30); do
+        docker info >/dev/null 2>&1 && break
+        sleep 1
+      done
+    - docker version
+    - docker run --rm hello-world
+    - echo "PASS: dind runner is functional"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+
+smoke:rocky8:
+  stage: test
+  tags:
+    - rocky8
+    - rhel8
+    - linux
+  image: rockylinux:8
+  script:
+    - cat /etc/os-release
+    - yum install -y curl
+    - curl -sSf https://gitlab.com > /dev/null
+    - echo "PASS: rocky8 runner is functional"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+
+smoke:rocky9:
+  stage: test
+  tags:
+    - rocky9
+    - rhel9
+    - linux
+  image: rockylinux:9
+  script:
+    - cat /etc/os-release
+    - dnf install -y curl
+    - curl -sSf https://gitlab.com > /dev/null
+    - echo "PASS: rocky9 runner is functional"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+
+smoke:nix:
+  stage: test
+  tags:
+    - nix
+    - flakes
+  image: docker.nix-community.org/nixpkgs/nix-flakes:nixos-unstable
+  script:
+    - nix --version
+    - nix eval nixpkgs#hello.name
+    - echo "PASS: nix runner is functional"
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
