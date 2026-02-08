@@ -1,5 +1,5 @@
-# Attic Cache - Bazel Configuration
-# =================================
+# Attic IaC - Bazel Configuration
+# ================================
 
 # Build settings
 build --jobs=auto
@@ -12,11 +12,11 @@ build --incompatible_enable_cc_toolchain_resolution
 common --enable_bzlmod
 
 # Disk cache for local builds
-build --disk_cache=~/.cache/bazel/attic-cache
+build --disk_cache=~/.cache/bazel/attic-iac
 
-# =============================================================================
+# ============================================================================
 # Nix Integration
-# =============================================================================
+# ============================================================================
 # Container and binary builds are handled by Nix (nix build .#container)
 # Bazel focuses on validation and artifact bundling
 
@@ -29,27 +29,13 @@ build --experimental_remote_cache_async
 # Guard against concurrent changes during builds
 build --experimental_guard_against_concurrent_changes
 
-# =============================================================================
-# Remote Cache Configuration (bazel-remote on MinIO)
-# =============================================================================
-# Cache configurations for different environments.
-# All use the same bazel-remote backend but with different endpoints.
-
-# CI-internal: For GitLab runners in the beehive cluster
-# Uses cluster-internal gRPC endpoint (no TLS)
-build:ci-internal --remote_cache=grpc://bazel-cache.attic-cache-dev.svc.cluster.local:9092
-build:ci-internal --remote_upload_local_results=true
-build:ci-internal --remote_download_minimal
-build:ci-internal --experimental_remote_cache_async
-build:ci-internal --remote_timeout=60
-
-# Remote: For external access (campus network)
-# Uses ingress endpoint with TLS
-build:remote --remote_cache=grpcs://bazel-cache.beehive.bates.edu:443
-build:remote --remote_upload_local_results=true
-build:remote --remote_download_minimal
-build:remote --experimental_remote_cache_async
-build:remote --remote_timeout=120
+# ============================================================================
+# Remote Cache Configuration
+# ============================================================================
+# Downstream modules should define their own remote cache endpoints.
+# Example configs:
+#   build:ci-internal --remote_cache=grpc://bazel-cache.example.local:9092
+#   build:remote --remote_cache=grpcs://bazel-cache.example.com:443
 
 # Read-only: For builds that should only read from cache
 build:cache-readonly --remote_upload_local_results=false
@@ -79,16 +65,9 @@ build:ci --color=yes
 build:ci --curses=no
 test:ci --test_output=all
 
-# CI with remote cache (for beehive runners)
-# Combines ci settings with ci-internal remote cache
+# CI with remote cache (configure remote cache endpoint separately)
+# Usage: bazel build --config=ci-cached //...
 build:ci-cached --config=ci
-build:ci-cached --config=ci-internal
-
-# Runner pool: for self-service bates-ils runners with BAZEL_REMOTE_CACHE env
-# Usage: bazel build --config=runner-pool //...
-build:runner-pool --jobs=4
-build:runner-pool --color=yes
-build:runner-pool --curses=no
 
 # Platform-specific settings (containers built via Nix, not rules_oci)
 # build:linux --platforms=@platforms//os:linux
@@ -97,9 +76,9 @@ build:runner-pool --curses=no
 # Memory optimization for large builds
 startup --host_jvm_args=-Xmx4g
 
-# =============================================================================
+# ============================================================================
 # JavaScript / SvelteKit Build Settings
-# =============================================================================
+# ============================================================================
 # Settings for rules_js and the Runner Dashboard app
 
 # Allow pnpm/node to create symlinks in sandbox
