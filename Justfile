@@ -10,9 +10,14 @@
 #   - Nix with flakes enabled
 #
 # Quick Start:
+#   just setup              # Set up local development environment
 #   just                    # List all commands
 #   just check              # Run all validations
 #   just tofu-plan attic    # Plan Attic stack deployment
+#
+# Environment Setup:
+#   Create .env from .env.example and set TF_HTTP_PASSWORD (GitLab PAT)
+#   The .envrc automatically loads .env via direnv (dotenv_if_exists)
 #
 # Environment Selection:
 #   ENV=rigel just tofu-plan attic   # Target rigel cluster
@@ -21,6 +26,42 @@
 # Default recipe - list available commands
 default:
     @just --list --unsorted
+
+# Set up local development environment
+setup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "Setting up local development environment..."
+    echo
+
+    # Check for .env file
+    if [ ! -f .env ]; then
+        echo "Creating .env from .env.example..."
+        cp .env.example .env
+        echo
+        echo "IMPORTANT: Edit .env and set TF_HTTP_PASSWORD to your GitLab PAT"
+        echo "  Get your token from: https://gitlab.com/-/user_settings/personal_access_tokens"
+        echo "  Required scopes: api, read_repository, write_repository"
+        echo
+        echo "After setting TF_HTTP_PASSWORD, reload direnv:"
+        echo "  direnv allow"
+        echo
+    else
+        echo ".env already exists"
+    fi
+
+    # Check TF_HTTP_PASSWORD
+    if [ -z "${TF_HTTP_PASSWORD:-}" ]; then
+        echo "WARNING: TF_HTTP_PASSWORD not set in .env"
+        echo "  Edit .env and add: TF_HTTP_PASSWORD=glpat-your-token-here"
+        echo "  Then run: direnv allow"
+    else
+        echo "TF_HTTP_PASSWORD: configured ✓"
+    fi
+
+    echo
+    echo "Setup complete! Run 'just' to see available commands."
 
 # =============================================================================
 # Configuration
@@ -113,13 +154,28 @@ dev: check nix-build
 
 # Show current environment configuration
 info:
-    @echo "Environment Configuration"
-    @echo "========================="
-    @echo "ENV:           {{env}}"
-    @echo "Kube Context:  {{kube_context}}"
-    @echo "Ingress:       {{ingress_domain}}"
-    @echo "GitLab API:    {{gitlab_api}}"
-    @echo "Project ID:    {{gitlab_project}}"
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Environment Configuration"
+    echo "========================="
+    echo "ENV:             {{env}}"
+    echo "Kube Context:    {{kube_context}}"
+    echo "Ingress:         {{ingress_domain}}"
+    echo "GitLab API:      {{gitlab_api}}"
+    echo "Project ID:      {{gitlab_project}}"
+    echo
+    echo "Secrets"
+    echo "======="
+    if [ -f .env ]; then
+        echo ".env file:       exists ✓"
+    else
+        echo ".env file:       missing (run 'just setup')"
+    fi
+    if [ -n "${TF_HTTP_PASSWORD:-}" ]; then
+        echo "TF_HTTP_PASSWORD: configured ✓"
+    else
+        echo "TF_HTTP_PASSWORD: not set (required for OpenTofu)"
+    fi
 
 # =============================================================================
 # Nix Commands
