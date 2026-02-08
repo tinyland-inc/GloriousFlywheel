@@ -11,3 +11,4 @@ config:
   no-duplicate-heading:
     siblings_only: true
   blanks-around-tables: false
+  no-emphasis-as-heading: false
