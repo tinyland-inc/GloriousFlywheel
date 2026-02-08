@@ -1,20 +1,20 @@
 # Runner Dashboard Module
 #
 # Deploys the GitLab Runner Dashboard web application to Kubernetes.
-# Provides a real-time monitoring UI for bates-ils-runners with OAuth login.
+# Provides a real-time monitoring UI for GitLab runners with OAuth login.
 #
 # Usage:
 #   module "runner_dashboard" {
 #     source = "../../modules/runner-dashboard"
 #
 #     namespace      = "runner-dashboard"
-#     image          = "registry.gitlab.com/bates-ils/runner-dashboard:latest"
-#     ingress_host   = "runner-dashboard.beehive.bates.edu"
-#     runners_namespace = "bates-ils-runners"
+#     image          = "registry.gitlab.com/myorg/runner-dashboard:latest"
+#     ingress_host   = "runner-dashboard.example.com"
+#     runners_namespace = "gitlab-runners"
 #
 #     gitlab_oauth_client_id     = var.gitlab_oauth_client_id
 #     gitlab_oauth_client_secret = var.gitlab_oauth_client_secret
-#     gitlab_oauth_redirect_uri  = "https://runner-dashboard.beehive.bates.edu/auth/callback"
+#     gitlab_oauth_redirect_uri  = "https://runner-dashboard.example.com/auth/callback"
 #     gitlab_url                 = "https://gitlab.com"
 #     gitlab_token               = var.gitlab_token
 #     prometheus_url             = "http://prometheus.monitoring.svc.cluster.local:9090"
@@ -78,7 +78,7 @@ resource "kubernetes_namespace" "dashboard" {
     }
 
     annotations = {
-      "description" = "GitLab Runner Dashboard for bates-ils group"
+      "description" = "GitLab Runner Dashboard with monitoring and management UI"
     }
   }
 

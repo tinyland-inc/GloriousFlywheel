@@ -26,7 +26,7 @@ resource "kubernetes_role_v1" "ci_job_access" {
 
 resource "kubernetes_role_binding_v1" "ci_job_access" {
   metadata {
-    name      = "bates-ils-ci-job-access"
+    name      = "gitlab-ci-job-access"
     namespace = var.namespace
 
     labels = {

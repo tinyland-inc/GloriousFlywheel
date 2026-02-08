@@ -47,6 +47,9 @@ backend.local.hcl
 *.pfx
 secrets/
 
+# Organization config (Bates-specific, not upstream)
+config/organization.yaml
+
 # IDE
 .idea/
 .vscode/

@@ -58,7 +58,7 @@ variable "gitlab_oauth_client_secret" {
 }
 
 variable "gitlab_oauth_redirect_uri" {
-  description = "OAuth redirect URI (e.g., https://runner-dashboard.beehive.bates.edu/auth/callback)"
+  description = "OAuth redirect URI (e.g., https://runner-dashboard.example.com/auth/callback)"
   type        = string
 }
 
@@ -98,7 +98,7 @@ variable "prometheus_url" {
 variable "runners_namespace" {
   description = "Namespace where GitLab runners are deployed (for RBAC read access)"
   type        = string
-  default     = "bates-ils-runners"
+  default     = "gitlab-runners"
 }
 
 # =============================================================================

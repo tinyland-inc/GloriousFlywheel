@@ -67,26 +67,38 @@ setup:
 # Configuration
 # =============================================================================
 
+# Organization config file location
+org_config := "config/organization.yaml"
+
 # Environment: beehive (dev) or rigel (staging/prod)
 env := env_var_or_default("ENV", "beehive")
 
-# GitLab project for state storage
-gitlab_project := "78189586"
-gitlab_api := "https://gitlab.com/api/v4"
+# GitLab project for state storage (loaded from organization config)
+gitlab_project := `yq '.gitlab.project_id' config/organization.yaml`
+gitlab_api := `yq '.gitlab.url' config/organization.yaml` + "/api/v4"
 
-# Kubernetes context based on environment
+# Kubernetes context based on environment (loaded from organization config)
 kube_context := if env == "beehive" {
-    "bates-ils/projects/kubernetes/gitlab-agents:beehive"
+    `yq '.clusters[] | select(.name == "beehive") | .context' config/organization.yaml`
+} else if env == "rigel" {
+    `yq '.clusters[] | select(.name == "rigel") | .context' config/organization.yaml`
 } else {
-    "bates-ils/projects/kubernetes/gitlab-agents:rigel"
+    `yq '.clusters[0].context' config/organization.yaml`
 }
 
-# Ingress domain based on environment
-ingress_domain := if env == "beehive" { "beehive.bates.edu" } else { "rigel.bates.edu" }
+# Ingress domain based on environment (loaded from organization config)
+ingress_domain := if env == "beehive" {
+    `yq '.clusters[] | select(.name == "beehive") | .domain' config/organization.yaml`
+} else if env == "rigel" {
+    `yq '.clusters[] | select(.name == "rigel") | .domain' config/organization.yaml`
+} else {
+    `yq '.clusters[0].domain' config/organization.yaml`
+}
 
-# SOCKS proxy port (xoxd-bates → Bates internal network)
-socks_port := "1080"
-socks_proxy := "socks5h://localhost:" + socks_port
+# SOCKS proxy configuration (optional, loaded from organization config)
+socks_host := `yq '.network.proxy_host // ""' config/organization.yaml`
+socks_port := `yq '.network.proxy_port // "1080"' config/organization.yaml`
+socks_proxy := if socks_host != "" { "socks5h://localhost:" + socks_port } else { "" }
 
 # =============================================================================
 # Bates Network Proxy

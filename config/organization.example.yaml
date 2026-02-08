@@ -1,0 +1,33 @@
+# config/organization.example.yaml - Generic Template for Any Organization
+organization:
+  name: myorg
+  full_name: "My Organization"
+  group_path: mygroup
+
+gitlab:
+  url: https://gitlab.com
+  project_id: "YOUR_PROJECT_ID"
+  agent_group: mygroup/kubernetes/agents
+
+clusters:
+  - name: dev
+    role: development
+    domain: dev.example.com
+    context: mygroup/kubernetes/agents:dev
+
+  - name: prod
+    role: production
+    domain: prod.example.com
+    context: mygroup/kubernetes/agents:prod
+
+namespaces:
+  attic:
+    dev: attic-cache-dev
+    staging: attic-cache-staging
+    prod: attic-cache
+  runners:
+    all: gitlab-runners
+
+network:
+  proxy_host: null # Optional SOCKS proxy
+  proxy_port: null

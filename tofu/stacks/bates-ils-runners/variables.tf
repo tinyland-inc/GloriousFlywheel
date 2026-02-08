@@ -45,7 +45,7 @@ variable "gitlab_group_id" {
 variable "namespace" {
   description = "Kubernetes namespace for runners"
   type        = string
-  default     = "bates-ils-runners"
+  default     = "gitlab-runners" # Generic default; override in tfvars
 }
 
 # =============================================================================

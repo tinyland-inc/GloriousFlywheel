@@ -14,12 +14,12 @@ variable "k8s_config_path" {
 }
 
 variable "cluster_context" {
-  description = "GitLab Kubernetes Agent context (e.g., bates-ils/projects/kubernetes/gitlab-agents:beehive)"
+  description = "GitLab Kubernetes Agent context (e.g., mygroup/kubernetes/agents:dev)"
   type        = string
 
   validation {
-    condition     = can(regex("^bates-ils/projects/kubernetes/gitlab-agents:(beehive|rigel)$", var.cluster_context))
-    error_message = "cluster_context must be a valid Bates GitLab Agent context (beehive or rigel)"
+    condition     = can(regex("^[a-z0-9-]+/[^:]+:[a-z0-9-]+$", var.cluster_context))
+    error_message = "cluster_context must be a valid GitLab Agent context (group/path:agent)"
   }
 }
 
