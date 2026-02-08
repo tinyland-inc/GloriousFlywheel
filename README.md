@@ -18,9 +18,10 @@ graph LR
 ## What is this?
 
 A set of OpenTofu modules, Nix packages, and a SvelteKit monitoring dashboard that
-form a recursive infrastructure system. GitLab runners deploy themselves, the Nix
-binary cache caches its own derivations, bazel overlay orchestrates the cycle across enterprises, 
-RenovateBot keeps dependencies current -- all running on infrastructure managed by this code.
+form a recursive infrastructure system for Gitlab.  GitLab runners deploy themselves as a HPA runner pool, the Nix
+binary cache caches its own derivations, bazel overlay orchestrates intra enterprise deployments, 
+intra enterprise automations (such as your companies pool of autonmous clankers, Steve, RenovateBot or your manager checking in every now and again) 
+- all running on infrastructure managed by this code.  I think its kinda neat. 
 
 ## Architecture
 
