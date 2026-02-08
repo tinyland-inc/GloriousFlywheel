@@ -1,0 +1,129 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main, dev]
+
+jobs:
+  validate-config:
+    name: Validate Organization Config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+
+      - name: Validate example configs
+        run: |
+          ./scripts/validate-org-config.sh config/organization.example.yaml
+          ./scripts/validate-org-config.sh config/organization-s3.example.yaml
+          ./scripts/validate-org-config.sh config/organization-ha.example.yaml
+
+  validate-tofu:
+    name: Validate OpenTofu Modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - hpa-deployment
+          - postgresql-cnpg
+          - cnpg-operator
+          - minio-tenant
+          - minio-operator
+          - gitlab-runner
+          - gitlab-user-runner
+          - gitlab-agent-rbac
+          - runner-security
+          - runner-dashboard
+          - bazel-cache
+          - dns-record
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.8.8
+
+      - name: Validate ${{ matrix.module }}
+        run: |
+          cd tofu/modules/${{ matrix.module }}
+          tofu init -backend=false
+          tofu validate
+
+  validate-stacks:
+    name: Validate OpenTofu Stacks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        stack:
+          - attic
+          - bates-ils-runners
+          - runner-dashboard
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: 1.8.8
+
+      - name: Format check
+        run: |
+          cd tofu/stacks/${{ matrix.stack }}
+          tofu fmt -check -recursive
+
+      - name: Validate ${{ matrix.stack }}
+        run: |
+          cd tofu/stacks/${{ matrix.stack }}
+          tofu init -backend=false
+          tofu validate
+
+  test-app:
+    name: Test Runner Dashboard
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm check
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  lint-markdown:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint Markdown files
+        uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          globs: |
+            README.md
+            CONTRIBUTING.md
+            docs/**/*.md
