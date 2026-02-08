@@ -35,7 +35,8 @@ provider "helm" {
 }
 
 provider "gitlab" {
-  token = var.gitlab_token
+  token            = var.gitlab_token
+  early_auth_check = false
 }
 
 # =============================================================================

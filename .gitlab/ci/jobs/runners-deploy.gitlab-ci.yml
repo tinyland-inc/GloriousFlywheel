@@ -30,13 +30,24 @@ runners:plan:beehive:
     KUBE_CONTEXT: "bates-ils/projects/kubernetes/gitlab-agents:beehive"
   script:
     - *runners_init
-    - tofu plan -var-file=beehive.tfvars -var="gitlab_token=${GITLAB_RUNNER_TOKEN:-${CI_JOB_TOKEN}}" -out=plan.tfplan
+    - |
+      PLAN_FLAGS=(-var-file=beehive.tfvars)
+      if [ -n "${GITLAB_RUNNER_TOKEN:-}" ]; then
+        PLAN_FLAGS+=(-var="gitlab_token=${GITLAB_RUNNER_TOKEN}")
+      fi
+      if [ -n "${KUBECONFIG:-}" ]; then
+        PLAN_FLAGS+=(-var="k8s_config_path=${KUBECONFIG}")
+      fi
+      tofu plan "${PLAN_FLAGS[@]}" -out=plan.tfplan
   artifacts:
     paths:
       - ${STACK_DIR}/plan.tfplan
     expire_in: 7 days
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  environment:
+    name: beehive/runners
+    action: prepare
 
 # rigel plan — disabled until beehive is validated and promoted
 # runners:plan:rigel:
@@ -65,7 +76,15 @@ runners:apply:beehive:
     KUBE_CONTEXT: "bates-ils/projects/kubernetes/gitlab-agents:beehive"
   script:
     - *runners_init
-    - tofu apply -var-file=beehive.tfvars -var="gitlab_token=${GITLAB_RUNNER_TOKEN:-${CI_JOB_TOKEN}}" -auto-approve
+    - |
+      APPLY_FLAGS=(-var-file=beehive.tfvars -auto-approve)
+      if [ -n "${GITLAB_RUNNER_TOKEN:-}" ]; then
+        APPLY_FLAGS+=(-var="gitlab_token=${GITLAB_RUNNER_TOKEN}")
+      fi
+      if [ -n "${KUBECONFIG:-}" ]; then
+        APPLY_FLAGS+=(-var="k8s_config_path=${KUBECONFIG}")
+      fi
+      tofu apply "${APPLY_FLAGS[@]}"
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: manual
