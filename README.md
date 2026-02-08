@@ -2,19 +2,6 @@
 
 Self-deploying infrastructure that builds, caches, and monitors itself.
 
-```mermaid
-graph LR
-    R[Runners] -->|"tofu apply"| R
-    R -->|deploy| AC[Attic Cache]
-    AC -->|accelerates| NB[Nix Builds]
-    NB -->|"executed by"| R
-    R -->|deploy| D[Dashboard]
-    D -->|monitors| R
-    AC -->|"caches its own derivations"| AC
-    RB[Clanker or Human] -->|"version bump PRs"| PIPE[CI Pipeline]
-    PIPE -->|"executed by"| R
-```
-
 ## What is this?
 
 A set of OpenTofu modules, Nix packages, and a SvelteKit monitoring dashboard that
@@ -48,6 +35,21 @@ graph TD
 - **GitLab runners** -- 5 types (docker, dind, rocky8, rocky9, nix) with HPA autoscaling
 - **Runner dashboard** -- SvelteKit 5 + Skeleton v4 monitoring UI with drift detection
 - **Documentation site** -- SvelteKit + mdsvex + Mermaid, deployed to GitHub/GitLab Pages
+
+
+```mermaid
+graph LR
+    R[Runners] -->|"tofu apply"| R
+    R -->|deploy| AC[Attic Cache]
+    AC -->|accelerates| NB[Nix Builds]
+    NB -->|"executed by"| R
+    R -->|deploy| D[Dashboard]
+    D -->|monitors| R
+    AC -->|"caches its own derivations"| AC
+    RB[Clanker or Human] -->|"version bump PRs"| PIPE[CI Pipeline]
+    PIPE -->|"executed by"| R
+```
+
 
 ## Quick Start
 
