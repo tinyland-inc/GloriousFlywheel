@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   "/auth/login",
   "/auth/callback",
   "/auth/logout",
+  "/auth/logged-out",
 ];
 
 export const handle: Handle = async ({ event, resolve }) => {
