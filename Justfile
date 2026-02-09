@@ -815,3 +815,21 @@ tex-clean:
 # Watch and rebuild TeX on changes
 tex-watch:
     watchexec -w tex_research/glorious-flywheel -e tex,bib -- just tex
+
+# ============================================================================
+# Changelog
+# ============================================================================
+
+# Generate CHANGELOG.md from git history
+changelog:
+    git cliff --output CHANGELOG.md
+    echo "[changelog] Generated CHANGELOG.md"
+
+# Preview changelog for next release (dry run)
+changelog-preview:
+    git cliff --unreleased
+
+# Generate changelog for a specific tag/version
+changelog-tag tag:
+    git cliff --tag {{tag}} --output CHANGELOG.md
+    echo "[changelog] Generated CHANGELOG.md for {{tag}}"
