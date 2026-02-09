@@ -153,3 +153,8 @@ Each job runs in an ephemeral `ci-job-*` Kubernetes namespace with:
 This applies to `docker`, `rocky8`, `rocky9`, and `nix` runners. The `dind`
 runner is the exception -- it uses a shared namespace with privileged access.
 See [security-model.md](security-model.md) for full details.
+
+## See Also
+
+- [Project Onboarding Guide](project-onboarding.md) -- step-by-step enrollment for new projects
+- [Resource Limits Reference](resource-limits.md) -- job pod resource limits and workload profiles
