@@ -40,3 +40,5 @@ through `organization.yaml`.
 - [Security Model](security-model.md) -- privilege and access boundaries
 - [Troubleshooting](troubleshooting.md) -- common issues and fixes
 - [Runbook](runbook.md) -- operational procedures
+- [Project Onboarding](project-onboarding.md) -- enroll a project on the runner pool
+- [Resource Limits](resource-limits.md) -- job pod resource limits reference

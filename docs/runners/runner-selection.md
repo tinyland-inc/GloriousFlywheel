@@ -49,6 +49,21 @@ Use these tags in your `.gitlab-ci.yml` to select a runner:
 | rocky9 | `rocky9` |
 | nix | `nix`, `flakes` |
 
+## Tag Semantics
+
+Each tag maps to exactly one runner type. Use the **primary tag** for runner selection:
+
+| Primary Tag | Runner | When to Use |
+|-------------|--------|-------------|
+| `docker` | bates-docker | Default for most jobs |
+| `dind` | bates-dind | Jobs requiring Docker daemon |
+| `rocky8` | bates-rocky8 | RHEL 8 / EL8 packaging |
+| `rocky9` | bates-rocky9 | RHEL 9 / EL9 packaging |
+| `nix` | bates-nix | Nix flake builds |
+
+Additional tags (`kubernetes`, `linux`, `amd64`, `flakes`, `privileged`, `rhel8`, `rhel9`)
+are available for finer matching but the primary tag is sufficient for most use cases.
+
 ## Performance Tip
 
 Always use the smallest runner that meets your needs. The `docker` runner
