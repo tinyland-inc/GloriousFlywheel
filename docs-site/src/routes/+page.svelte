@@ -88,7 +88,7 @@
 				built with <a href="https://xoxd.ai" target="_blank" rel="noopener noreferrer" class="font-semibold text-primary-500 hover:text-primary-400 transition-colors">xoxd.ai</a>
 			</p>
 			<p class="mt-2 text-surface-500 max-w-2xl mx-auto">
-				Orchestrating massively parallel, provable agent infrastructure at the intersection of autonomous scale and cryptographic integrity. xoxd.ai ^w^
+				Orchestrating massively parallel, provable agent infrastructure. xoxd.ai ^w^
 			</p>
 		</div>
 	</div>
