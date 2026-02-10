@@ -34,13 +34,13 @@ variable "runner_tags" {
 # =============================================================================
 
 variable "runner_type" {
-  description = "Type of runner: docker, dind, rocky8, rocky9, nix"
+  description = "Type of runner: docker, dind, rocky8, rocky9, nix, l40s, a100"
   type        = string
   default     = "docker"
 
   validation {
-    condition     = contains(["docker", "dind", "rocky8", "rocky9", "nix"], var.runner_type)
-    error_message = "runner_type must be one of: docker, dind, rocky8, rocky9, nix"
+    condition     = contains(["docker", "dind", "rocky8", "rocky9", "nix", "l40s", "a100"], var.runner_type)
+    error_message = "runner_type must be one of: docker, dind, rocky8, rocky9, nix, l40s, a100"
   }
 }
 
@@ -462,4 +462,37 @@ variable "job_priority_class_name" {
   description = "PriorityClass name for CI job pods"
   type        = string
   default     = ""
+}
+
+# =============================================================================
+# GPU Configuration (for l40s, a100 runner types)
+# =============================================================================
+
+variable "gpu_count" {
+  description = "Number of GPUs to request per job pod"
+  type        = number
+  default     = 1
+}
+
+variable "gpu_resource_name" {
+  description = "Kubernetes GPU resource name"
+  type        = string
+  default     = "nvidia.com/gpu"
+}
+
+variable "gpu_node_selector" {
+  description = "Node selector for GPU job pods (e.g., node pool labels)"
+  type        = map(string)
+  default     = {}
+}
+
+variable "gpu_tolerations" {
+  description = "Tolerations for GPU job pods (e.g., GPU node taints)"
+  type = list(object({
+    key      = string
+    operator = string
+    value    = optional(string)
+    effect   = string
+  }))
+  default = []
 }
