@@ -353,7 +353,7 @@ resource "kubernetes_deployment" "dashboard" {
             }
 
             dynamic "volume_mount" {
-              for_each = var.caddy_mtls_ca_cert != "" ? toset(["enabled"]) : toset([])
+              for_each = { for k in ["mtls"] : k => k if var.caddy_mtls_ca_cert != "" }
               content {
                 name       = "caddy-mtls"
                 mount_path = "/etc/caddy/mtls"
@@ -362,7 +362,7 @@ resource "kubernetes_deployment" "dashboard" {
             }
 
             dynamic "env" {
-              for_each = var.caddy_tailscale_auth_key != "" ? toset(["enabled"]) : toset([])
+              for_each = { for k in ["ts"] : k => k if var.caddy_tailscale_auth_key != "" }
               content {
                 name = "TS_AUTHKEY"
                 value_from {
