@@ -339,7 +339,7 @@ resource "kubernetes_deployment" "dashboard" {
 
           # Mount environments config if provided
           dynamic "volume_mount" {
-            for_each = var.environments_config != "" ? [1] : []
+            for_each = var.environments_config != "" ? toset(["enabled"]) : toset([])
             content {
               name       = "environments-config"
               mount_path = "/etc/dashboard"
@@ -349,7 +349,7 @@ resource "kubernetes_deployment" "dashboard" {
 
           # Set config path env var when ConfigMap is mounted
           dynamic "env" {
-            for_each = var.environments_config != "" ? [1] : []
+            for_each = var.environments_config != "" ? toset(["enabled"]) : toset([])
             content {
               name  = "ENVIRONMENTS_CONFIG_PATH"
               value = "/etc/dashboard/environments.json"
@@ -373,7 +373,7 @@ resource "kubernetes_deployment" "dashboard" {
 
         # Volume for environments ConfigMap
         dynamic "volume" {
-          for_each = var.environments_config != "" ? [1] : []
+          for_each = var.environments_config != "" ? toset(["enabled"]) : toset([])
           content {
             name = "environments-config"
             config_map {
@@ -444,7 +444,7 @@ resource "kubernetes_ingress_v1" "dashboard" {
     ingress_class_name = var.ingress_class
 
     dynamic "tls" {
-      for_each = var.enable_tls ? [1] : []
+      for_each = var.enable_tls ? toset(["enabled"]) : toset([])
       content {
         hosts       = [var.ingress_host]
         secret_name = "${var.name}-tls"
