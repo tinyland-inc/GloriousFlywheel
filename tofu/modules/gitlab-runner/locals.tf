@@ -14,6 +14,8 @@ locals {
     rocky8 = "rockylinux:8"
     rocky9 = "rockylinux:9"
     nix    = "docker.nix-community.org/nixpkgs/nix-flakes:nixos-unstable"
+    l40s   = "nvidia/cuda:12.4-devel-ubuntu22.04"
+    a100   = "nvidia/cuda:12.4-devel-ubuntu22.04"
   }
 
   # Whether runner type needs privileged mode
@@ -23,6 +25,8 @@ locals {
     rocky8 = false
     rocky9 = false
     nix    = false
+    l40s   = true
+    a100   = true
   }
 
   # Whether runner type uses DinD service
@@ -32,6 +36,8 @@ locals {
     rocky8 = false
     rocky9 = false
     nix    = false
+    l40s   = false
+    a100   = false
   }
 
   # Default tags per runner type (merged with user tags)
@@ -48,7 +54,12 @@ locals {
     rocky8 = ["rocky8", "rhel8", "linux"]
     rocky9 = ["rocky9", "rhel9", "linux"]
     nix    = ["nix", "flakes"]
+    l40s   = ["gpu", "nvidia", "cuda", "l40s", "linux"]
+    a100   = ["gpu", "nvidia", "cuda", "a100", "linux"]
   }
+
+  # Whether this runner type needs GPU resources
+  gpu_enabled = contains(["l40s", "a100"], var.runner_type)
 
   # =============================================================================
   # Computed Values
@@ -157,6 +168,10 @@ locals {
     var.bazel_cache_endpoint != "" && contains(["docker", "nix"], var.runner_type) ? [
       "BAZEL_REMOTE_CACHE=${var.bazel_cache_endpoint}",
     ] : [],
+    local.gpu_enabled ? [
+      "NVIDIA_VISIBLE_DEVICES=all",
+      "NVIDIA_DRIVER_CAPABILITIES=compute,utility",
+    ] : [],
   )
 
   # =============================================================================
@@ -215,6 +230,37 @@ locals {
         %{if var.cleanup_enabled~}
         pod_termination_grace_period_seconds = ${var.cleanup_grace_seconds}
         cleanup_grace_period_seconds = ${var.cleanup_grace_period_seconds}
+        %{endif~}
+        %{if local.gpu_enabled~}
+        # GPU node selector
+        %{for key, value in var.gpu_node_selector~}
+        [runners.kubernetes.node_selector]
+          ${key} = "${value}"
+        %{endfor~}
+        # GPU tolerations
+        %{for toleration in var.gpu_tolerations~}
+        [[runners.kubernetes.node_tolerations]]
+          key = "${toleration.key}"
+          operator = "${toleration.operator}"
+          %{if toleration.value != null~}
+          value = "${toleration.value}"
+          %{endif~}
+          effect = "${toleration.effect}"
+        %{endfor~}
+        # GPU resource request via pod_spec strategic merge patch
+        pod_spec = ${jsonencode(jsonencode({
+          containers = [{
+            name = "build"
+            resources = {
+              requests = {
+                (var.gpu_resource_name) = tostring(var.gpu_count)
+              }
+              limits = {
+                (var.gpu_resource_name) = tostring(var.gpu_count)
+              }
+            }
+          }]
+        }))}
         %{endif~}
   TOML
 }
