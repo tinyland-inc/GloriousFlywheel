@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { browserSupportsWebAuthn, startRegistration } from '@simplewebauthn/browser';
+	import { onMount } from 'svelte';
 
 	let { authMethod = 'oauth' }: { authMethod: string } = $props();
 
@@ -15,8 +15,11 @@
 	let loading = $state(true);
 	let registering = $state(false);
 	let error = $state('');
+	let webauthnSupported = $state(false);
 
-	$effect(() => {
+	onMount(async () => {
+		const { browserSupportsWebAuthn } = await import('@simplewebauthn/browser');
+		webauthnSupported = browserSupportsWebAuthn();
 		loadPasskeys();
 	});
 
@@ -38,6 +41,8 @@
 		registering = true;
 		error = '';
 		try {
+			const { startRegistration } = await import('@simplewebauthn/browser');
+
 			const optionsRes = await fetch('/auth/webauthn/register');
 			if (!optionsRes.ok) {
 				throw new Error('Failed to get registration options');
@@ -87,7 +92,7 @@
 		});
 	}
 
-	const canRegister = $derived(authMethod === 'oauth' && browserSupportsWebAuthn());
+	const canRegister = $derived(authMethod === 'oauth' && webauthnSupported);
 </script>
 
 <div class="space-y-3">
