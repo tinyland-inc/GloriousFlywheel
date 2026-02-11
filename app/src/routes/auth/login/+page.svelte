@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
+	import { onMount } from 'svelte';
 
 	let webauthnSupported = $state(false);
 	let webauthnLoading = $state(false);
 	let webauthnError = $state('');
 
-	$effect(() => {
+	onMount(async () => {
+		const { browserSupportsWebAuthn } = await import('@simplewebauthn/browser');
 		webauthnSupported = browserSupportsWebAuthn();
 	});
 
@@ -13,6 +14,8 @@
 		webauthnLoading = true;
 		webauthnError = '';
 		try {
+			const { startAuthentication } = await import('@simplewebauthn/browser');
+
 			const optionsRes = await fetch('/auth/webauthn/authenticate');
 			const options = await optionsRes.json();
 
