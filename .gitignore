@@ -87,6 +87,9 @@ kubeconfig*
 # Attic local config
 .attic/
 
+# Git hooks (local, not committed upstream)
+.githooks/
+
 # Claude Code cache keys (public, not secret)
 public-key.txt
 
