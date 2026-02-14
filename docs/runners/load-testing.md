@@ -164,7 +164,7 @@ kubectl get events -n {org}-runners -w
 
 ### Prometheus Queries
 
-```promql
+```text
 # Job queue depth
 gitlab_runner_jobs{state="running"}
 

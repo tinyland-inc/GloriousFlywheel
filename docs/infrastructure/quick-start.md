@@ -135,7 +135,7 @@ git clone <overlay-repo-url> ~/git/your-org-overlay
 
 2. The overlay `MODULE.bazel` already declares a `local_path_override` pointing to the upstream sibling directory:
 
-```starlark
+```python
 local_path_override(
     module_name = "attic-iac",
     path = "../../attic-iac",

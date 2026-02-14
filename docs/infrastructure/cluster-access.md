@@ -39,7 +39,7 @@ kubectl get nodes
 
 Configure in your overlay Justfile:
 
-```just
+```bash
 # Run kubectl against a specific cluster
 bk *ARGS:
     kubectl --kubeconfig=kubeconfig-{environment} {{ARGS}}
@@ -74,7 +74,7 @@ kubectl get pods -n {namespace}
 
 Configure in your overlay Justfile:
 
-```just
+```bash
 # Start the SOCKS5 proxy
 proxy-up:
     ssh -fN -D 1080 user@jump-host

@@ -69,7 +69,7 @@ The overlay system uses three files to merge upstream and private sources. Copy 
 
 ### `MODULE.bazel`
 
-```starlark
+```python
 """Your Organization - Private overlay module."""
 
 module(
@@ -106,10 +106,9 @@ cp ~/git/attic-iac/docs/infrastructure/templates/overlay.bzl build/overlay.bzl
 
 Or copy from an existing overlay. The file is generic and works without modification.
 
-<details>
-<summary>Full overlay.bzl source (click to expand)</summary>
+#### Full overlay.bzl source
 
-```starlark
+```python
 """Overlay repository rule for merging upstream and private sources.
 
 Creates a repository that symlinks all files from an upstream Bazel module,
@@ -196,11 +195,9 @@ overlay_repository = repository_rule(
 )
 ```
 
-</details>
-
 ### `build/extensions.bzl`
 
-```starlark
+```python
 """Module extension bridging MODULE.bazel tag declarations to overlay_repository."""
 
 load("//build:overlay.bzl", "overlay_repository")
@@ -230,7 +227,7 @@ overlay = module_extension(
 
 ### `BUILD.bazel`
 
-```starlark
+```python
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 
 package(default_visibility = ["//visibility:public"])
