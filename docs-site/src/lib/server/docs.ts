@@ -117,10 +117,14 @@ export async function getNavigation(): Promise<NavItem[]> {
 }
 
 export async function getDocPage(slug: string): Promise<DocPage | null> {
+	// Strip .md extension from slug — markdown cross-references use .md
+	// but docs site routes don't include the extension
+	const cleanSlug = slug.replace(/\.md$/, '');
+
 	const candidates = [
-		join(DOCS_DIR, `${slug}.md`),
-		join(DOCS_DIR, slug, 'index.md'),
-		join(DOCS_DIR, slug, 'README.md')
+		join(DOCS_DIR, `${cleanSlug}.md`),
+		join(DOCS_DIR, cleanSlug, 'index.md'),
+		join(DOCS_DIR, cleanSlug, 'README.md')
 	];
 
 	for (const filePath of candidates) {

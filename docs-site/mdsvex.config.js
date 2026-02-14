@@ -1,6 +1,5 @@
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
-import { escapeSvelte } from 'mdsvex';
 import { createHighlighter } from 'shiki';
 import {
   transformerNotationDiff,
@@ -55,12 +54,13 @@ function highlightCode(code, lang, meta) {
       ]
     });
 
-    const escaped = escapeSvelte(html);
-    return `{@html \`${escaped}\`}`;
+    // Return raw HTML — the docs site renders compiled output via {@html data.html}
+    // in +page.svelte, so wrapping in {@html `...`} would be double-wrapped and
+    // rendered as literal text instead of being interpreted as a Svelte directive.
+    return html;
   } catch (error) {
     console.warn(`[mdsvex] Shiki highlighting failed for lang="${language}":`, error.message);
-    const escaped = escapeSvelte(code);
-    return `<pre><code class="language-${language}">${escaped}</code></pre>`;
+    return `<pre><code class="language-${language}">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
   }
 }
 
