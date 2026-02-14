@@ -45,7 +45,7 @@ Houses the Attic binary cache server and its PostgreSQL database:
 - **CloudNativePG cluster** -- manages the PostgreSQL instance(s) for Attic's metadata store
 - **PVCs** -- Longhorn-backed persistent volumes for cache object storage
 
-### {org}-runners
+### gitlab-runners
 
 Contains all GitLab Runner deployments. Each runner type (docker, dind, rocky8, rocky9, nix) runs as a separate pod managed by a Helm release. Runners reference the Attic cache via the `ATTIC_SERVER` environment variable pointing into the `attic-cache-dev` namespace.
 

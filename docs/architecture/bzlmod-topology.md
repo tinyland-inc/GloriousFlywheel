@@ -48,7 +48,7 @@ graph TD
 
 An overlay `MODULE.bazel` contains two declarations:
 
-```starlark
+```python
 bazel_dep(name = "attic-iac")
 local_path_override(
     module_name = "attic-iac",
