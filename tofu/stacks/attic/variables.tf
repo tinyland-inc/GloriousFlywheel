@@ -72,7 +72,7 @@ variable "attic_image" {
   type        = string
   # Pinned to commit 12cbeca (2026-01-22) for reproducibility and security
   # Update this when upgrading Attic version after testing
-  default = "heywoodlh/attic:12cbeca141f46e1ade76728bce8adc447f2166c6"
+  default = "ghcr.io/tinyland-inc/attic:12cbeca141f46e1ade76728bce8adc447f2166c6"
 }
 
 # =============================================================================
