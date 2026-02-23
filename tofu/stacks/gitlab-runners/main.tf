@@ -1,7 +1,7 @@
-# GitLab Runners Stack - Beehive Deployment
+# GitLab Runners Stack
 #
-# Deploys self-hosted GitLab Runners to the beehive Kubernetes cluster.
-# Runners are registered via tokens created in GitLab UI.
+# Deploys self-hosted GitLab Runners to Kubernetes via Helm chart.
+# Supports 3 runner types: nix (Nix builds), docker (general CI), dind (Docker-in-Docker).
 
 terraform {
   required_version = ">= 1.6.0"
@@ -36,59 +36,127 @@ provider "helm" {
 module "nix_runner" {
   source = "../../modules/gitlab-runner"
 
-  runner_name      = "nix-runner"
+  runner_name      = var.nix_runner_name
+  runner_type      = "nix"
   namespace        = var.namespace
   create_namespace = var.create_namespace
 
   gitlab_url   = var.gitlab_url
   runner_token = var.nix_runner_token
 
-  runner_tags     = ["nix", "kubernetes"]
-  privileged      = false
-  concurrent_jobs = var.nix_concurrent_jobs
+  concurrent_jobs          = var.nix_concurrent_jobs
+  use_legacy_exec_strategy = var.use_legacy_exec_strategy
+  spread_to_nodes          = var.spread_to_nodes
 
-  cpu_request    = var.nix_cpu_request
-  memory_request = var.nix_memory_request
+  # Manager pod resources
+  cpu_request    = var.manager_cpu_request
+  memory_request = var.manager_memory_request
+  cpu_limit      = var.manager_cpu_limit
+  memory_limit   = var.manager_memory_limit
 
-  additional_values = yamlencode({
-    runners = {
-      config = <<-TOML
-        [[runners]]
-          [runners.kubernetes]
-            namespace = "${var.namespace}"
-            image = "alpine:3.21"
-            [[runners.kubernetes.volumes.empty_dir]]
-              name = "nix-store"
-              mount_path = "/nix"
-      TOML
-    }
-  })
+  manager_priority_class_name = var.manager_priority_class_name
+  job_priority_class_name     = var.job_priority_class_name
+
+  # Job pod resources
+  job_cpu_request    = var.nix_job_cpu_request
+  job_memory_request = var.nix_job_memory_request
+  job_cpu_limit      = var.nix_job_cpu_limit
+  job_memory_limit   = var.nix_job_memory_limit
+
+  # HPA
+  hpa_enabled      = var.nix_hpa_enabled
+  hpa_min_replicas = var.nix_hpa_min_replicas
+  hpa_max_replicas = var.nix_hpa_max_replicas
+
+  # Nix/Attic configuration
+  attic_server = var.attic_server
+  attic_cache  = var.attic_cache
 }
 
 # =============================================================================
-# K8s Runner - For kubectl/tofu deployment jobs
+# Docker Runner - For general CI jobs
 # =============================================================================
 
-module "k8s_runner" {
+module "docker_runner" {
   source = "../../modules/gitlab-runner"
-  count  = var.deploy_k8s_runner ? 1 : 0
+  count  = var.deploy_docker_runner ? 1 : 0
 
-  runner_name      = "k8s-runner"
+  runner_name      = var.docker_runner_name
+  runner_type      = "docker"
   namespace        = var.namespace
   create_namespace = false
 
   depends_on = [module.nix_runner]
 
   gitlab_url   = var.gitlab_url
-  runner_token = var.k8s_runner_token
+  runner_token = var.docker_runner_token
 
-  runner_tags         = ["kubernetes", "tofu", "kubectl"]
-  privileged          = false
-  concurrent_jobs     = var.k8s_concurrent_jobs
-  cluster_wide_access = true
+  concurrent_jobs          = var.docker_concurrent_jobs
+  use_legacy_exec_strategy = var.use_legacy_exec_strategy
+  spread_to_nodes          = var.spread_to_nodes
 
-  cpu_request    = "100m"
-  memory_request = "256Mi"
+  # Manager pod resources
+  cpu_request    = var.manager_cpu_request
+  memory_request = var.manager_memory_request
+  cpu_limit      = var.manager_cpu_limit
+  memory_limit   = var.manager_memory_limit
+
+  manager_priority_class_name = var.manager_priority_class_name
+  job_priority_class_name     = var.job_priority_class_name
+
+  # Job pod resources
+  job_cpu_request    = var.docker_job_cpu_request
+  job_memory_request = var.docker_job_memory_request
+  job_cpu_limit      = var.docker_job_cpu_limit
+  job_memory_limit   = var.docker_job_memory_limit
+
+  # HPA
+  hpa_enabled      = var.docker_hpa_enabled
+  hpa_min_replicas = var.docker_hpa_min_replicas
+  hpa_max_replicas = var.docker_hpa_max_replicas
+}
+
+# =============================================================================
+# DinD Runner - For Docker-in-Docker jobs
+# =============================================================================
+
+module "dind_runner" {
+  source = "../../modules/gitlab-runner"
+  count  = var.deploy_dind_runner ? 1 : 0
+
+  runner_name      = var.dind_runner_name
+  runner_type      = "dind"
+  namespace        = var.namespace
+  create_namespace = false
+
+  depends_on = [module.nix_runner]
+
+  gitlab_url   = var.gitlab_url
+  runner_token = var.dind_runner_token
+
+  concurrent_jobs          = var.dind_concurrent_jobs
+  use_legacy_exec_strategy = var.use_legacy_exec_strategy
+  spread_to_nodes          = var.spread_to_nodes
+
+  # Manager pod resources
+  cpu_request    = var.manager_cpu_request
+  memory_request = var.manager_memory_request
+  cpu_limit      = var.manager_cpu_limit
+  memory_limit   = var.manager_memory_limit
+
+  manager_priority_class_name = var.manager_priority_class_name
+  job_priority_class_name     = var.job_priority_class_name
+
+  # Job pod resources
+  job_cpu_request    = var.dind_job_cpu_request
+  job_memory_request = var.dind_job_memory_request
+  job_cpu_limit      = var.dind_job_cpu_limit
+  job_memory_limit   = var.dind_job_memory_limit
+
+  # HPA
+  hpa_enabled      = var.dind_hpa_enabled
+  hpa_min_replicas = var.dind_hpa_min_replicas
+  hpa_max_replicas = var.dind_hpa_max_replicas
 }
 
 # =============================================================================
