@@ -1178,7 +1178,7 @@ resource "kubernetes_job_v1" "init_cache" {
 
         container {
           name  = "init"
-          image = "alpine:3.19"
+          image = var.init_cache_image
 
           command = ["/bin/sh", "-c"]
           args = [

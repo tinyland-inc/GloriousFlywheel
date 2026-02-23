@@ -683,6 +683,12 @@ variable "init_image" {
   default     = "ghcr.io/tinyland-inc/busybox:1.36"
 }
 
+variable "init_cache_image" {
+  description = "Image for init-cache job (needs apk/curl/openssl)"
+  type        = string
+  default     = "ghcr.io/tinyland-inc/alpine:3.19"
+}
+
 # =============================================================================
 # Bazel Remote Cache Configuration
 # =============================================================================
