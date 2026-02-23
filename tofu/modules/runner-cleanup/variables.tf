@@ -32,7 +32,7 @@ variable "failed_threshold_seconds" {
 variable "kubectl_image" {
   description = "Container image for kubectl"
   type        = string
-  default     = "ghcr.io/tinyland-inc/kubectl:1.31"
+  default     = "ghcr.io/tinyland-inc/kubectl:latest"
 }
 
 variable "image_pull_secrets" {
