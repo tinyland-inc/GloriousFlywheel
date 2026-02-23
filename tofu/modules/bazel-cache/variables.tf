@@ -110,7 +110,7 @@ variable "max_queued_uploads" {
 variable "image" {
   description = "bazel-remote container image"
   type        = string
-  default     = "buchgr/bazel-remote-cache:v2.4.4"
+  default     = "ghcr.io/tinyland-inc/bazel-remote-cache:v2.4.4"
 }
 
 variable "cpu_request" {
@@ -267,6 +267,12 @@ variable "additional_labels" {
 # =============================================================================
 # Init Containers
 # =============================================================================
+
+variable "image_pull_secrets" {
+  description = "List of image pull secret names for private registries"
+  type        = list(string)
+  default     = []
+}
 
 variable "init_containers" {
   description = "Init containers to run before the main container"

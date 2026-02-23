@@ -661,6 +661,29 @@ variable "enable_cache_warming" {
 }
 
 # =============================================================================
+# GHCR Registry Authentication
+# =============================================================================
+
+variable "ghcr_token" {
+  description = "GHCR personal access token for pulling mirrored images (empty to skip)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "ghcr_username" {
+  description = "GHCR username for image pull authentication"
+  type        = string
+  default     = "tinyland-inc"
+}
+
+variable "init_image" {
+  description = "Init container image (busybox mirror on GHCR)"
+  type        = string
+  default     = "ghcr.io/tinyland-inc/busybox:1.36"
+}
+
+# =============================================================================
 # Bazel Remote Cache Configuration
 # =============================================================================
 # Optional bazel-remote cache server for Bazel action caching.

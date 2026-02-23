@@ -129,6 +129,13 @@ resource "kubernetes_deployment" "main" {
           }
         }
 
+        dynamic "image_pull_secrets" {
+          for_each = var.image_pull_secrets
+          content {
+            name = image_pull_secrets.value
+          }
+        }
+
         # Init containers for waiting on dependencies
         dynamic "init_container" {
           for_each = var.init_containers

@@ -90,3 +90,55 @@ module "k8s_runner" {
   cpu_request    = "100m"
   memory_request = "256Mi"
 }
+
+# =============================================================================
+# GHCR Registry Auth (imagePullSecret)
+# =============================================================================
+
+resource "kubernetes_secret" "ghcr_auth" {
+  count = var.ghcr_token != "" ? 1 : 0
+
+  metadata {
+    name      = "ghcr-auth"
+    namespace = var.namespace
+
+    labels = {
+      "app.kubernetes.io/name"       = "ghcr-auth"
+      "app.kubernetes.io/component"  = "registry-credentials"
+      "app.kubernetes.io/managed-by" = "opentofu"
+    }
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "ghcr.io" = {
+          auth = base64encode("${var.ghcr_username}:${var.ghcr_token}")
+        }
+      }
+    })
+  }
+
+  depends_on = [module.nix_runner]
+}
+
+locals {
+  ghcr_pull_secrets = var.ghcr_token != "" ? ["ghcr-auth"] : []
+}
+
+# =============================================================================
+# Runner Cleanup CronJob
+# =============================================================================
+
+module "runner_cleanup" {
+  count  = var.enable_runner_cleanup ? 1 : 0
+  source = "../../modules/runner-cleanup"
+
+  namespace          = var.namespace
+  kubectl_image      = var.kubectl_image
+  image_pull_secrets = local.ghcr_pull_secrets
+
+  depends_on = [module.nix_runner]
+}

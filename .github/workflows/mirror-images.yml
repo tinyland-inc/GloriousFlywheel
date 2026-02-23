@@ -1,0 +1,39 @@
+name: Mirror Docker Hub Images to GHCR
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Weekly Monday 06:00 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/mirror-images.yml"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  mirror:
+    name: Mirror ${{ matrix.source }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - source: buchgr/bazel-remote-cache:v2.4.4
+            target: ghcr.io/tinyland-inc/bazel-remote-cache:v2.4.4
+          - source: busybox:1.36
+            target: ghcr.io/tinyland-inc/busybox:1.36
+          - source: bitnami/kubectl:1.31
+            target: ghcr.io/tinyland-inc/kubectl:1.31
+
+    steps:
+      - name: Install crane
+        uses: imjasonh/setup-crane@v0.4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | crane auth login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Copy ${{ matrix.source }}
+        run: crane copy "${{ matrix.source }}" "${{ matrix.target }}"

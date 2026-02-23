@@ -32,5 +32,11 @@ variable "failed_threshold_seconds" {
 variable "kubectl_image" {
   description = "Container image for kubectl"
   type        = string
-  default     = "bitnami/kubectl:latest"
+  default     = "ghcr.io/tinyland-inc/kubectl:1.31"
+}
+
+variable "image_pull_secrets" {
+  description = "List of image pull secret names for private registries"
+  type        = list(string)
+  default     = []
 }
