@@ -27,6 +27,8 @@ jobs:
             target: ghcr.io/tinyland-inc/busybox:1.36
           - source: bitnami/kubectl:latest
             target: ghcr.io/tinyland-inc/kubectl:latest
+          - source: alpine:3.19
+            target: ghcr.io/tinyland-inc/alpine:3.19
           - source: heywoodlh/attic:12cbeca141f46e1ade76728bce8adc447f2166c6
             target: ghcr.io/tinyland-inc/attic:12cbeca141f46e1ade76728bce8adc447f2166c6
 
