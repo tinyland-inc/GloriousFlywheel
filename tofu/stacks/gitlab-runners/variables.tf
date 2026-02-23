@@ -89,7 +89,7 @@ variable "enable_runner_cleanup" {
 variable "kubectl_image" {
   description = "Container image for kubectl (cleanup job)"
   type        = string
-  default     = "ghcr.io/tinyland-inc/kubectl:1.31"
+  default     = "ghcr.io/tinyland-inc/kubectl:latest"
 }
 
 # =============================================================================
