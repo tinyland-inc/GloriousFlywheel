@@ -41,6 +41,7 @@ resource "helm_release" "gitlab_runner" {
   version          = var.chart_version
   namespace        = var.namespace
   create_namespace = false
+  timeout          = 600 # 10 minutes; rolling updates with PDB can exceed default 5m
 
   # Override the Helm chart's default name (release-gitlab-runner) to just
   # the release name. This ensures the Deployment, Service, and pod labels
