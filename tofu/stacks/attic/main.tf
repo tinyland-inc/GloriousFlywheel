@@ -1176,6 +1176,13 @@ resource "kubernetes_job_v1" "init_cache" {
       spec {
         restart_policy = "OnFailure"
 
+        dynamic "image_pull_secrets" {
+          for_each = local.ghcr_pull_secrets
+          content {
+            name = image_pull_secrets.value
+          }
+        }
+
         container {
           name  = "init"
           image = var.init_cache_image
