@@ -174,6 +174,13 @@ resource "kubernetes_cron_job_v1" "cleanup" {
             service_account_name = kubernetes_service_account_v1.cleanup.metadata[0].name
             restart_policy       = "OnFailure"
 
+            dynamic "image_pull_secrets" {
+              for_each = var.image_pull_secrets
+              content {
+                name = image_pull_secrets.value
+              }
+            }
+
             container {
               name    = "cleanup"
               image   = var.kubectl_image

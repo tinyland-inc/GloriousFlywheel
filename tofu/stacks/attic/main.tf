@@ -128,6 +128,43 @@ locals {
 }
 
 # =============================================================================
+# GHCR Registry Auth (imagePullSecret)
+# =============================================================================
+
+resource "kubernetes_secret" "ghcr_auth" {
+  count = var.ghcr_token != "" ? 1 : 0
+
+  metadata {
+    name      = "ghcr-auth"
+    namespace = local.namespace_name
+
+    labels = {
+      "app.kubernetes.io/name"       = "ghcr-auth"
+      "app.kubernetes.io/component"  = "registry-credentials"
+      "app.kubernetes.io/managed-by" = "opentofu"
+    }
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "ghcr.io" = {
+          auth = base64encode("${var.ghcr_username}:${var.ghcr_token}")
+        }
+      }
+    })
+  }
+
+  depends_on = [kubernetes_namespace.nix_cache]
+}
+
+locals {
+  ghcr_pull_secrets = var.ghcr_token != "" ? ["ghcr-auth"] : []
+}
+
+# =============================================================================
 # Input Validation
 # =============================================================================
 
@@ -643,13 +680,15 @@ module "attic_api" {
     "app.kubernetes.io/part-of" = "nix-cache"
   }
 
+  image_pull_secrets = local.ghcr_pull_secrets
+
   # Init containers to wait for dependencies (PostgreSQL and MinIO)
   init_containers = concat(
     # Wait for PostgreSQL to be ready
     var.use_cnpg_postgres ? [
       {
         name    = "wait-for-postgres"
-        image   = "busybox:1.36"
+        image   = var.init_image
         command = ["/bin/sh", "-c"]
         args = [
           "echo 'Waiting for PostgreSQL...'; until nc -z ${module.attic_pg[0].cluster_name}-rw.${local.namespace_name}.svc.cluster.local 5432; do echo 'PostgreSQL not ready, waiting...'; sleep 5; done; echo 'PostgreSQL is ready!'"
@@ -660,7 +699,7 @@ module "attic_api" {
     var.use_minio ? [
       {
         name    = "wait-for-minio"
-        image   = "busybox:1.36"
+        image   = var.init_image
         command = ["/bin/sh", "-c"]
         args = [
           "echo 'Waiting for MinIO...'; until nc -z attic-minio-hl.${local.namespace_name}.svc.cluster.local 9000; do echo 'MinIO not ready, waiting...'; sleep 5; done; echo 'MinIO is ready!'"
@@ -724,12 +763,19 @@ resource "kubernetes_deployment" "attic_gc" {
       }
 
       spec {
+        dynamic "image_pull_secrets" {
+          for_each = local.ghcr_pull_secrets
+          content {
+            name = image_pull_secrets.value
+          }
+        }
+
         # Init containers to wait for dependencies
         dynamic "init_container" {
           for_each = var.use_cnpg_postgres ? [1] : []
           content {
             name    = "wait-for-postgres"
-            image   = "busybox:1.36"
+            image   = var.init_image
             command = ["/bin/sh", "-c"]
             args = [
               "echo 'Waiting for PostgreSQL...'; until nc -z ${module.attic_pg[0].cluster_name}-rw.${local.namespace_name}.svc.cluster.local 5432; do echo 'PostgreSQL not ready, waiting...'; sleep 5; done; echo 'PostgreSQL is ready!'"
@@ -741,7 +787,7 @@ resource "kubernetes_deployment" "attic_gc" {
           for_each = var.use_minio ? [1] : []
           content {
             name    = "wait-for-minio"
-            image   = "busybox:1.36"
+            image   = var.init_image
             command = ["/bin/sh", "-c"]
             args = [
               "echo 'Waiting for MinIO...'; until nc -z attic-minio-hl.${local.namespace_name}.svc.cluster.local 9000; do echo 'MinIO not ready, waiting...'; sleep 5; done; echo 'MinIO is ready!'"
@@ -1275,11 +1321,13 @@ module "bazel_cache" {
   # Don't wait for rollout to avoid blocking
   wait_for_rollout = false
 
+  image_pull_secrets = local.ghcr_pull_secrets
+
   # Init container to wait for MinIO to be ready
   init_containers = [
     {
       name    = "wait-for-minio"
-      image   = "busybox:1.36"
+      image   = var.init_image
       command = ["/bin/sh", "-c"]
       args = [
         "echo 'Waiting for MinIO...'; until nc -z attic-minio-hl.${local.namespace_name}.svc.cluster.local 9000; do echo 'MinIO not ready, waiting...'; sleep 5; done; echo 'MinIO is ready!'"

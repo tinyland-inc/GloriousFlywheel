@@ -76,6 +76,43 @@ variable "k8s_concurrent_jobs" {
   default     = 4
 }
 
+# =============================================================================
+# Runner Cleanup
+# =============================================================================
+
+variable "enable_runner_cleanup" {
+  description = "Deploy runner cleanup CronJob"
+  type        = bool
+  default     = false
+}
+
+variable "kubectl_image" {
+  description = "Container image for kubectl (cleanup job)"
+  type        = string
+  default     = "ghcr.io/tinyland-inc/kubectl:1.31"
+}
+
+# =============================================================================
+# GHCR Registry Authentication
+# =============================================================================
+
+variable "ghcr_token" {
+  description = "GHCR personal access token for pulling mirrored images (empty to skip)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "ghcr_username" {
+  description = "GHCR username for image pull authentication"
+  type        = string
+  default     = "tinyland-inc"
+}
+
+# =============================================================================
+# Runner Resources
+# =============================================================================
+
 variable "nix_cpu_request" {
   description = "CPU request for Nix runner manager"
   type        = string

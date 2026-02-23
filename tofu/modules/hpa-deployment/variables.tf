@@ -507,6 +507,12 @@ variable "pdb_min_available" {
 # Init Containers
 # =============================================================================
 
+variable "image_pull_secrets" {
+  description = "List of image pull secret names for private registries"
+  type        = list(string)
+  default     = []
+}
+
 variable "init_containers" {
   description = "Init containers to run before the main container (for waiting on dependencies)"
   type = list(object({
