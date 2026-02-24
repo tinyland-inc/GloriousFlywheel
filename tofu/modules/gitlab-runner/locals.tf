@@ -225,6 +225,19 @@ locals {
         privileged = ${local.privileged}
         poll_timeout = ${var.poll_timeout}
         poll_interval = ${var.poll_interval}
+        # Job pod resources — MUST be before any nested [table] headers
+        # (TOML flat keys after a [nested.table] are parsed under that table)
+        cpu_request = "${var.job_cpu_request}"
+        memory_request = "${var.job_memory_request}"
+        cpu_limit = "${var.job_cpu_limit}"
+        memory_limit = "${var.job_memory_limit}"
+        %{if var.job_priority_class_name != ""~}
+        pod_priority_class_name = "${var.job_priority_class_name}"
+        %{endif~}
+        %{if var.cleanup_enabled~}
+        pod_termination_grace_period_seconds = ${var.cleanup_grace_seconds}
+        cleanup_grace_period_seconds = ${var.cleanup_grace_period_seconds}
+        %{endif~}
         %{if var.namespace_per_job~}
         namespace_per_job = true
         namespace_per_job_prefix = "${var.namespace_per_job_prefix}"
@@ -259,18 +272,6 @@ locals {
                   [[runners.kubernetes.affinity.pod_anti_affinity.preferred_during_scheduling_ignored_during_execution.pod_affinity_term.label_selector.match_expressions]]
                     key = "pod"
                     operator = "Exists"
-        %{endif~}
-        # Job pod resources
-        cpu_request = "${var.job_cpu_request}"
-        memory_request = "${var.job_memory_request}"
-        cpu_limit = "${var.job_cpu_limit}"
-        memory_limit = "${var.job_memory_limit}"
-        %{if var.job_priority_class_name != ""~}
-        pod_priority_class_name = "${var.job_priority_class_name}"
-        %{endif~}
-        %{if var.cleanup_enabled~}
-        pod_termination_grace_period_seconds = ${var.cleanup_grace_seconds}
-        cleanup_grace_period_seconds = ${var.cleanup_grace_period_seconds}
         %{endif~}
         %{if local.gpu_enabled~}
         # GPU node selector
