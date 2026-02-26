@@ -29,6 +29,8 @@ jobs:
     strategy:
       matrix:
         module:
+          - arc-controller
+          - arc-runner
           - hpa-deployment
           - postgresql-cnpg
           - cnpg-operator
@@ -61,6 +63,7 @@ jobs:
     strategy:
       matrix:
         stack:
+          - arc-runners
           - attic
           - gitlab-runners
           - runner-dashboard

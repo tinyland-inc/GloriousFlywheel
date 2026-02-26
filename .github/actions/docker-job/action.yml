@@ -1,0 +1,21 @@
+name: "Docker Job (GloriousFlywheel)"
+description: "Run a CI job with Bazel cache configured for self-hosted runners"
+
+inputs:
+  command:
+    description: "Command to run"
+    required: true
+  bazel-cache:
+    description: "Bazel remote cache endpoint (auto-detected on self-hosted)"
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - uses: ./github/actions/setup-flywheel
+      with:
+        bazel-cache: ${{ inputs.bazel-cache }}
+
+    - name: Run command
+      shell: bash
+      run: ${{ inputs.command }}
