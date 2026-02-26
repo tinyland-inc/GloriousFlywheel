@@ -139,12 +139,16 @@ resource "kubernetes_config_map" "dashboard" {
       PROMETHEUS_URL            = var.prometheus_url
       RUNNERS_NAMESPACE         = var.runners_namespace
       K8S_NAMESPACE             = var.runners_namespace
+      K8S_RUNNER_NAMESPACES     = join(",", concat([var.runners_namespace], var.arc_namespaces))
       GITLAB_GROUP_ID           = var.gitlab_group_id
       GITLAB_PROJECT_ID         = var.gitlab_project_id
       RUNNER_STACK_NAME         = var.runner_stack_name
       ATTIC_DEFAULT_ENV         = var.default_env
       LOG_LEVEL                 = var.log_level
     },
+    length(var.arc_namespaces) > 0 ? {
+      ARC_NAMESPACE = var.arc_namespaces[0]
+    } : {},
     var.webauthn_rp_id != "" ? {
       WEBAUTHN_RP_ID   = var.webauthn_rp_id
       WEBAUTHN_RP_NAME = var.webauthn_rp_name

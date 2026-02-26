@@ -1,17 +1,32 @@
 import { env } from "$env/dynamic/private";
+import type {
+  K8sListResponse,
+  K8sPod,
+  K8sDeployment,
+  K8sHPA,
+  K8sEvent,
+  K8sAutoScalingRunnerSet,
+} from "./types";
+
+// Re-export types for backward compatibility
+export type { K8sPod, K8sDeployment, K8sHPA, K8sEvent } from "./types";
+
+/**
+ * Runner namespaces to query, read from K8S_RUNNER_NAMESPACES env var.
+ * Comma-separated list, defaults to "gitlab-runners,arc-runners".
+ */
+export const RUNNER_NAMESPACES: string[] = (
+  env.K8S_RUNNER_NAMESPACES ?? "gitlab-runners,arc-runners"
+)
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 /**
  * Lightweight K8s API client.
  * In-cluster: uses service account token and CA from mounted paths.
  * Development: uses KUBECONFIG or kubectl proxy.
  */
-
-interface K8sListResponse<T> {
-  kind: string;
-  items: T[];
-  metadata: { resourceVersion?: string };
-}
-
 export class K8sClient {
   private baseUrl: string;
   private token: string | null;
@@ -91,6 +106,8 @@ export class K8sClient {
     return response.json() as Promise<T>;
   }
 
+  // --- Single-namespace methods (backward compatible) ---
+
   async listPods(): Promise<K8sPod[]> {
     const data = await this.request<K8sListResponse<K8sPod>>(
       `/api/v1/namespaces/${this.namespace}/pods`,
@@ -118,71 +135,76 @@ export class K8sClient {
     );
     return data.items;
   }
-}
 
-export interface K8sPod {
-  metadata: {
-    name: string;
-    namespace: string;
-    labels: Record<string, string>;
-    creationTimestamp: string;
-  };
-  status: {
-    phase: string;
-    containerStatuses?: Array<{
-      name: string;
-      ready: boolean;
-      restartCount: number;
-      state: Record<string, unknown>;
-    }>;
-  };
-}
+  // --- Multi-namespace methods ---
 
-export interface K8sDeployment {
-  metadata: { name: string; namespace: string };
-  spec: { replicas: number };
-  status: {
-    replicas: number;
-    readyReplicas: number;
-    availableReplicas: number;
-    updatedReplicas: number;
-  };
-}
+  async listPodsInNamespace(ns: string): Promise<K8sPod[]> {
+    const data = await this.request<K8sListResponse<K8sPod>>(
+      `/api/v1/namespaces/${ns}/pods`,
+    );
+    return data.items;
+  }
 
-export interface K8sHPA {
-  metadata: { name: string; namespace: string };
-  spec: {
-    minReplicas: number;
-    maxReplicas: number;
-    metrics: Array<{
-      type: string;
-      resource?: {
-        name: string;
-        target: { type: string; averageUtilization?: number };
-      };
-    }>;
-  };
-  status: {
-    currentReplicas: number;
-    desiredReplicas: number;
-    currentMetrics: Array<{
-      type: string;
-      resource?: {
-        name: string;
-        current: { averageUtilization?: number; averageValue?: string };
-      };
-    }>;
-  };
-}
+  async listHPAsInNamespace(ns: string): Promise<K8sHPA[]> {
+    const data = await this.request<K8sListResponse<K8sHPA>>(
+      `/apis/autoscaling/v2/namespaces/${ns}/horizontalpodautoscalers`,
+    );
+    return data.items;
+  }
 
-export interface K8sEvent {
-  metadata: { name: string; creationTimestamp: string };
-  type: string;
-  reason: string;
-  message: string;
-  involvedObject: { kind: string; name: string };
-  count: number;
-  lastTimestamp: string;
+  /**
+   * Fetch pods from multiple namespaces in parallel.
+   * Each pod is tagged with its source namespace via metadata.namespace.
+   */
+  async listAllRunnerPods(namespaces: string[]): Promise<K8sPod[]> {
+    const results = await Promise.allSettled(
+      namespaces.map((ns) => this.listPodsInNamespace(ns)),
+    );
+    const pods: K8sPod[] = [];
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        pods.push(...result.value);
+      }
+    }
+    return pods;
+  }
+
+  /**
+   * Fetch HPAs from multiple namespaces in parallel.
+   */
+  async listAllHPAs(namespaces: string[]): Promise<K8sHPA[]> {
+    const results = await Promise.allSettled(
+      namespaces.map((ns) => this.listHPAsInNamespace(ns)),
+    );
+    const hpas: K8sHPA[] = [];
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        hpas.push(...result.value);
+      }
+    }
+    return hpas;
+  }
+
+  // --- ARC CRD queries ---
+
+  /**
+   * List AutoScalingRunnerSets from a namespace (ARC custom resource).
+   */
+  async listAutoScalingRunnerSets(
+    ns: string,
+  ): Promise<K8sAutoScalingRunnerSet[]> {
+    try {
+      const data = await this.request<
+        K8sListResponse<K8sAutoScalingRunnerSet>
+      >(
+        `/apis/actions.github.com/v1alpha1/namespaces/${ns}/autoscalingrunnersets`,
+      );
+      return data.items;
+    } catch {
+      // CRD may not be installed — return empty
+      return [];
+    }
+  }
 }
 
 export const k8sClient = new K8sClient();

@@ -18,5 +18,16 @@
     "gitlab_project_id": "78189586",
     "role": "production",
     "context": "bates-ils/projects/kubernetes/gitlab-agents:rigel"
+  },
+  {
+    "name": "tinyland",
+    "label": "Tinyland (Dev)",
+    "domain": "fuzzy-dev.tinyland.dev",
+    "namespace": "gitlab-runners",
+    "arc_namespace": "arc-runners",
+    "gitlab_url": "https://gitlab.com",
+    "github_url": "https://github.com/tinyland-inc",
+    "role": "development",
+    "context": "tinyland-civo-dev"
   }
 ]

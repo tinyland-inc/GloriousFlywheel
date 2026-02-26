@@ -1,7 +1,7 @@
 # Runner Dashboard Module - RBAC
 #
 # ServiceAccount for the dashboard pod + ClusterRole with read access
-# to the runners namespace (pods, deployments, HPAs, events).
+# to runner namespaces (pods, deployments, HPAs, events) and ARC CRDs.
 
 # =============================================================================
 # ServiceAccount
@@ -17,7 +17,7 @@ resource "kubernetes_service_account" "dashboard" {
 }
 
 # =============================================================================
-# ClusterRole - Read access to runner resources
+# ClusterRole - Read access to runner resources + ARC CRDs
 # =============================================================================
 
 resource "kubernetes_cluster_role" "dashboard_reader" {
@@ -69,6 +69,13 @@ resource "kubernetes_cluster_role" "dashboard_reader" {
     resources  = ["pods"]
     verbs      = ["get", "list"]
   }
+
+  # ARC CRDs - read access to GitHub Actions runner resources
+  rule {
+    api_groups = ["actions.github.com"]
+    resources  = ["autoscalingrunnersets", "ephemeralrunnersets", "ephemeralrunners"]
+    verbs      = ["get", "list", "watch"]
+  }
 }
 
 # =============================================================================
@@ -96,13 +103,40 @@ resource "kubernetes_cluster_role_binding" "dashboard_reader" {
 }
 
 # =============================================================================
-# RoleBinding - Scoped read access to runners namespace specifically
+# RoleBinding - Scoped read access to GitLab runners namespace
 # =============================================================================
 
 resource "kubernetes_role_binding" "runners_reader" {
   metadata {
     name      = "${var.name}-reader"
     namespace = var.runners_namespace
+
+    labels = local.labels
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = kubernetes_cluster_role.dashboard_reader.metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = kubernetes_service_account.dashboard.metadata[0].name
+    namespace = local.namespace_name
+  }
+}
+
+# =============================================================================
+# RoleBindings - Scoped read access to ARC namespaces
+# =============================================================================
+
+resource "kubernetes_role_binding" "arc_reader" {
+  for_each = toset(var.arc_namespaces)
+
+  metadata {
+    name      = "${var.name}-reader"
+    namespace = each.value
 
     labels = local.labels
   }

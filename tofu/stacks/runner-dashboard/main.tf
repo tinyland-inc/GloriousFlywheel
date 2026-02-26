@@ -64,6 +64,7 @@ module "runner_dashboard" {
 
   # Kubernetes access
   runners_namespace = var.runners_namespace
+  arc_namespaces    = var.arc_namespaces
 
   # Container settings
   container_port = 3000
