@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 // Mock $env/dynamic/private
 vi.mock("$env/dynamic/private", () => ({
   env: {
-    RUNNER_NAMESPACE: "gitlab-runners",
+    K8S_RUNNER_NAMESPACES: "gitlab-runners,arc-runners",
   },
 }));
 
@@ -11,9 +11,9 @@ import { QUERIES, TIME_WINDOWS } from "../queries";
 
 describe("QUERIES", () => {
   describe("totalJobs", () => {
-    it("should return namespaced query without runner", () => {
+    it("should return multi-namespace query without runner", () => {
       const q = QUERIES.totalJobs();
-      expect(q).toContain('namespace="gitlab-runners"');
+      expect(q).toContain('namespace=~"gitlab-runners|arc-runners"');
       expect(q).not.toContain("runner=");
     });
 
