@@ -3,6 +3,7 @@ name: Test ARC Runners
 on:
   push:
     branches: [feat/arc-runners]
+  workflow_dispatch:
 
 jobs:
   test-nix:
