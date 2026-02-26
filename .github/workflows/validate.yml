@@ -145,3 +145,15 @@ jobs:
 
       - name: Check docs-site routes
         run: node scripts/check-links.js --mode site
+
+  check-external-links:
+    name: Check External Links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check external URLs
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: "--config .lychee.toml docs/**/*.md README.md"
+          fail: true
