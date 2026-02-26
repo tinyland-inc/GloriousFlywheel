@@ -108,7 +108,7 @@ cp .env.example .env
 
 Edit `.env` and set the `TF_HTTP_` credentials to a GitLab Personal Access Token with `api` scope (see `.env.example` for the required variable names). This token is used for the OpenTofu state backend.
 
-### 4. Deploy the three stacks (in order)
+### 4. Deploy the stacks (in order)
 
 ```bash
 # 1. Cache platform (must be first -- deploys CNPG, MinIO, PostgreSQL,
@@ -120,20 +120,37 @@ just tofu-apply attic
 just tofu-plan gitlab-runners
 just tofu-apply gitlab-runners
 
-# 3. Runner dashboard
+# 3. GitHub Actions runners (ARC) -- optional, only if using GitHub Actions
+just tofu-plan arc-runners
+just tofu-apply arc-runners
+
+# 4. Runner dashboard
 just tofu-plan runner-dashboard
 just tofu-apply runner-dashboard
 ```
+
+The ARC stack requires a GitHub App secret in both `arc-systems` and
+`arc-runners` namespaces. See the
+[GitHub App Adoption Guide](guides/github-app-adoption.md) for setup
+instructions.
 
 ### 5. Verify
 
 ```bash
 kubectl get pods -n attic-cache-dev       # Attic API + PostgreSQL + MinIO
-kubectl get pods -n gitlab-runners        # 5 runner manager pods
+kubectl get pods -n gitlab-runners        # GitLab runner manager pods
+kubectl get pods -n arc-systems           # ARC controller (if deployed)
+kubectl get pods -n arc-runners           # ARC runner pods (scale-to-zero, may be empty)
 kubectl get pods -n runner-dashboard      # Dashboard pod
 ```
 
 Check GitLab: **Your Group > Settings > CI/CD > Runners** should show the registered runners.
+
+If you deployed ARC, verify the GitHub App installation is working:
+
+```bash
+kubectl get autoscalingrunnersets -n arc-runners
+```
 
 ## Overlay Deployment
 
@@ -170,9 +187,13 @@ Kubernetes Cluster
   gitlab-runners/
     docker-runner (general purpose CI)
     dind-runner (Docker-in-Docker builds)
-    rocky8-runner (RHEL 8 packaging)
-    rocky9-runner (RHEL 9 packaging)
     nix-runner (Nix builds + Attic cache)
+  arc-systems/          (optional, if ARC deployed)
+    arc-controller (Actions Runner Controller)
+  arc-runners/          (optional, if ARC deployed)
+    gh-nix (Nix builds, scale-to-zero)
+    gh-docker (general purpose CI, scale-to-zero)
+    gh-dind (Docker-in-Docker, scale-to-zero)
   runner-dashboard/
     dashboard (SvelteKit monitoring UI)
 ```
@@ -189,7 +210,8 @@ build:
 ## Next Steps
 
 - [Self-Service Enrollment](runners/self-service-enrollment.md) -- how project teams use the runners
-- [Project Onboarding](runners/project-onboarding.md) -- step-by-step for enrolling a project
+- [GitHub App Adoption](guides/github-app-adoption.md) -- install GloriousFlywheel for GitHub Actions
 - [Runner Selection Guide](runners/runner-selection.md) -- which runner type for which workload
+- [Dashboard Overview](dashboard/overview.md) -- monitoring the runner pool
 - [Customization Guide](infrastructure/customization-guide.md) -- full `organization.yaml` reference
 - [Architecture Overview](architecture/recursive-dogfooding.md) -- understand the recursive flywheel
