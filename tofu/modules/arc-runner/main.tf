@@ -86,7 +86,9 @@ resource "helm_release" "arc_runner" {
             containers = [
               merge(
                 {
-                  name = "runner"
+                  name    = "runner"
+                  image   = "ghcr.io/actions/actions-runner:latest"
+                  command = ["/home/runner/run.sh"]
                   resources = {
                     requests = {
                       cpu    = var.cpu_request
