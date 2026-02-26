@@ -33,6 +33,7 @@ graph TD
 
 - **Cache platform** -- Nix binary cache (Attic API + GC), CloudNativePG PostgreSQL, MinIO S3 storage, DNS, optional Bazel remote cache
 - **GitLab runners** -- 5 types (docker, dind, rocky8, rocky9, nix) with HPA autoscaling
+- **GitHub Actions runners** -- ARC-based scale sets (tinyland-nix, tinyland-docker, tinyland-dind) with scale-to-zero
 - **Runner dashboard** -- SvelteKit 5 + Skeleton v4 monitoring UI with drift detection
 - **Documentation site** -- SvelteKit + mdsvex + Mermaid, deployed to GitHub/GitLab Pages
 

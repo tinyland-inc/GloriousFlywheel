@@ -6,6 +6,7 @@ package(default_visibility = ["//visibility:public"])
 filegroup(
     name = "all_stacks",
     srcs = [
+        "//tofu/stacks/arc-runners:stack_files",
         "//tofu/stacks/attic:stack_files",
         "//tofu/stacks/gitlab-runners:stack_files",
     ],

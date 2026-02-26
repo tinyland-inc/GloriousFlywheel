@@ -110,7 +110,7 @@ variable "default_env" {
 variable "prometheus_url" {
   description = "Prometheus server URL for metrics queries"
   type        = string
-  default     = "http://prometheus.monitoring.svc.cluster.local:9090"
+  default     = "http://prometheus.tinyland-staging.svc.cluster.local:9090"
 }
 
 # =============================================================================
@@ -121,6 +121,12 @@ variable "runners_namespace" {
   description = "Namespace where GitLab runners are deployed"
   type        = string
   default     = "gitlab-runners"
+}
+
+variable "arc_namespaces" {
+  description = "Additional namespaces for ARC (GitHub Actions) runner access"
+  type        = list(string)
+  default     = []
 }
 
 # =============================================================================

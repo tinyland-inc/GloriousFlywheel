@@ -175,7 +175,31 @@ This was discovered during the first non-dogfooding deployment of
 flywheel-derived runners, where the Bates beehive cluster runners were
 unexpectedly picking up overlay pipeline jobs.
 
+## GitHub Actions
+
+GitHub repos in organizations with the GloriousFlywheel GitHub App installed
+can use self-hosted runners with `runs-on` labels:
+
+```yaml
+jobs:
+  build:
+    runs-on: tinyland-nix
+    steps:
+      - uses: actions/checkout@v4
+      - run: nix build
+```
+
+| Label | Type | Use Case |
+| --- | --- | --- |
+| `tinyland-nix` | nix | Nix builds with Attic binary cache |
+| `tinyland-docker` | docker | General CI: linting, testing, builds |
+| `tinyland-dind` | dind | Docker-in-Docker: container image builds |
+
+Cache endpoints are auto-configured via cluster-internal DNS. See
+[GitHub Actions Runners](github-actions.md) for composite actions and details.
+
 ## See Also
 
+- [GitHub Actions Runners](github-actions.md) -- GitHub Actions runner pool
 - [Project Onboarding Guide](project-onboarding.md) -- step-by-step enrollment for new projects
 - [Resource Limits Reference](resource-limits.md) -- job pod resource limits and workload profiles

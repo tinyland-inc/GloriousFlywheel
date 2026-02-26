@@ -1,0 +1,39 @@
+# ARC Runners Stack - Bazel Build Configuration
+#
+# Targets for deploying GitHub Actions Runner Controller to Kubernetes clusters.
+
+package(default_visibility = ["//visibility:public"])
+
+# =============================================================================
+# File Groups
+# =============================================================================
+
+# Core OpenTofu configuration files
+filegroup(
+    name = "tf_files",
+    srcs = glob(["*.tf"]),
+)
+
+# Environment-specific variable files
+filegroup(
+    name = "tfvars_files",
+    srcs = glob(["*.tfvars"]),
+)
+
+# All stack files combined
+filegroup(
+    name = "stack_files",
+    srcs = [
+        ":tf_files",
+        ":tfvars_files",
+    ],
+)
+
+# =============================================================================
+# Aliases
+# =============================================================================
+
+alias(
+    name = "arc-runners",
+    actual = ":stack_files",
+)

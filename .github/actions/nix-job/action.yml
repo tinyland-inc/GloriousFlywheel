@@ -1,0 +1,41 @@
+name: "Nix Build (GloriousFlywheel)"
+description: "Run Nix build with Attic binary cache on self-hosted runners"
+
+inputs:
+  command:
+    description: "Nix command to run"
+    default: "nix build"
+  push-cache:
+    description: "Push results to Attic cache"
+    default: "true"
+  attic-server:
+    description: "Attic server URL (auto-detected on self-hosted)"
+    default: ""
+  attic-cache:
+    description: "Attic cache name"
+    default: "main"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: cachix/install-nix-action@v30
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+
+    - uses: ./github/actions/setup-flywheel
+      with:
+        attic-server: ${{ inputs.attic-server }}
+        attic-cache: ${{ inputs.attic-cache }}
+
+    - name: Configure Attic cache
+      if: env.ATTIC_SERVER != '' && env.ATTIC_TOKEN != ''
+      uses: ryanccn/attic-action@v0
+      with:
+        endpoint: ${{ env.ATTIC_SERVER }}
+        cache: ${{ env.ATTIC_CACHE }}
+        token: ${{ env.ATTIC_TOKEN }}
+        skip-push: ${{ inputs.push-cache == 'false' }}
+
+    - name: Run Nix command
+      shell: bash
+      run: ${{ inputs.command }}

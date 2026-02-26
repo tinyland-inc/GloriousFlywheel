@@ -1,66 +1,89 @@
-// Prebuilt PromQL queries matching tofu/modules/gitlab-runner/monitoring.tf
-// These reference the exact metric names and labels from the GitLab Runner Prometheus exporter
+// Prebuilt PromQL queries for cross-forge runner monitoring.
+// GitLab runners export gitlab_runner_* metrics; ARC runners use kube_pod_* and container_* metrics.
 
 import { env } from '$env/dynamic/private';
 
-const NS = env.RUNNER_NAMESPACE ?? 'gitlab-runners';
+// Multi-namespace regex for PromQL namespace selectors
+const NS_LIST = (env.K8S_RUNNER_NAMESPACES ?? 'gitlab-runners,arc-runners')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const NS = NS_LIST.join('|');
 
 export const QUERIES = {
+  // --- GitLab runner metrics (gitlab-runners namespace) ---
+
   // Total jobs processed
   totalJobs: (runner?: string) =>
     runner
-      ? `sum(gitlab_runner_jobs_total{namespace="${NS}", runner="${runner}"})`
-      : `sum(gitlab_runner_jobs_total{namespace="${NS}"})`,
+      ? `sum(gitlab_runner_jobs_total{namespace=~"${NS}", runner="${runner}"})`
+      : `sum(gitlab_runner_jobs_total{namespace=~"${NS}"})`,
 
   // Failed jobs
   failedJobs: (runner?: string) =>
     runner
-      ? `sum(gitlab_runner_failed_jobs_total{namespace="${NS}", runner="${runner}"})`
-      : `sum(gitlab_runner_failed_jobs_total{namespace="${NS}"})`,
+      ? `sum(gitlab_runner_failed_jobs_total{namespace=~"${NS}", runner="${runner}"})`
+      : `sum(gitlab_runner_failed_jobs_total{namespace=~"${NS}"})`,
 
   // Success rate (over time window)
   successRate: (window: string = "1h") =>
-    `1 - (sum(rate(gitlab_runner_failed_jobs_total{namespace="${NS}"}[${window}])) / sum(rate(gitlab_runner_jobs_total{namespace="${NS}"}[${window}])))`,
+    `1 - (sum(rate(gitlab_runner_failed_jobs_total{namespace=~"${NS}"}[${window}])) / sum(rate(gitlab_runner_jobs_total{namespace=~"${NS}"}[${window}])))`,
 
   // Jobs per minute (rate)
   jobsPerMinute: (runner?: string, window: string = "5m") =>
     runner
-      ? `sum(rate(gitlab_runner_jobs_total{namespace="${NS}", runner="${runner}"}[${window}])) * 60`
-      : `sum(rate(gitlab_runner_jobs_total{namespace="${NS}"}[${window}])) * 60`,
+      ? `sum(rate(gitlab_runner_jobs_total{namespace=~"${NS}", runner="${runner}"}[${window}])) * 60`
+      : `sum(rate(gitlab_runner_jobs_total{namespace=~"${NS}"}[${window}])) * 60`,
+
+  // --- Container metrics (work for both GitLab and ARC runners) ---
 
   // CPU usage by pod
   cpuUsage: (runner?: string) =>
     runner
-      ? `sum(rate(container_cpu_usage_seconds_total{namespace="${NS}", pod=~"${runner}.*"}[5m])) by (pod)`
-      : `sum(rate(container_cpu_usage_seconds_total{namespace="${NS}"}[5m])) by (pod)`,
+      ? `sum(rate(container_cpu_usage_seconds_total{namespace=~"${NS}", pod=~"${runner}.*"}[5m])) by (pod)`
+      : `sum(rate(container_cpu_usage_seconds_total{namespace=~"${NS}"}[5m])) by (pod)`,
 
   // Memory usage by pod
   memoryUsage: (runner?: string) =>
     runner
-      ? `sum(container_memory_usage_bytes{namespace="${NS}", pod=~"${runner}.*"}) by (pod)`
-      : `sum(container_memory_usage_bytes{namespace="${NS}"}[5m]) by (pod)`,
+      ? `sum(container_memory_usage_bytes{namespace=~"${NS}", pod=~"${runner}.*"}) by (pod)`
+      : `sum(container_memory_usage_bytes{namespace=~"${NS}"}[5m]) by (pod)`,
+
+  // --- HPA / autoscaler metrics ---
 
   // HPA current replicas
   hpaCurrentReplicas: (runner?: string) =>
     runner
-      ? `kube_horizontalpodautoscaler_status_current_replicas{namespace="${NS}", horizontalpodautoscaler=~"${runner}.*"}`
-      : `kube_horizontalpodautoscaler_status_current_replicas{namespace="${NS}"}`,
+      ? `kube_horizontalpodautoscaler_status_current_replicas{namespace=~"${NS}", horizontalpodautoscaler=~"${runner}.*"}`
+      : `kube_horizontalpodautoscaler_status_current_replicas{namespace=~"${NS}"}`,
 
   // HPA desired replicas
   hpaDesiredReplicas: (runner?: string) =>
     runner
-      ? `kube_horizontalpodautoscaler_status_desired_replicas{namespace="${NS}", horizontalpodautoscaler=~"${runner}.*"}`
-      : `kube_horizontalpodautoscaler_status_desired_replicas{namespace="${NS}"}`,
+      ? `kube_horizontalpodautoscaler_status_desired_replicas{namespace=~"${NS}", horizontalpodautoscaler=~"${runner}.*"}`
+      : `kube_horizontalpodautoscaler_status_desired_replicas{namespace=~"${NS}"}`,
+
+  // --- Cross-forge pod metrics (kube_pod_* works for both forges) ---
+
+  // Active runner pods count
+  activePods: () =>
+    `count(kube_pod_status_phase{namespace=~"${NS}", phase="Running"})`,
+
+  // Pending runner pods
+  pendingPods: () =>
+    `count(kube_pod_status_phase{namespace=~"${NS}", phase="Pending"}) or vector(0)`,
+
+  // --- Alerts & quotas ---
 
   // Active alerts
-  activeAlerts: () => `ALERTS{namespace="${NS}", alertstate="firing"}`,
+  activeAlerts: () => `ALERTS{namespace=~"${NS}", alertstate="firing"}`,
 
   // Enrollment metrics
   quotaUsage: (resource: string) =>
-    `kube_resourcequota{namespace="${NS}", resource="${resource}", type="used"} / kube_resourcequota{namespace="${NS}", resource="${resource}", type="hard"}`,
+    `kube_resourcequota{namespace=~"${NS}", resource="${resource}", type="used"} / kube_resourcequota{namespace=~"${NS}", resource="${resource}", type="hard"}`,
 
   pendingJobs: () =>
-    `sum(gitlab_runner_jobs{state="pending", namespace="${NS}"}) or vector(0)`,
+    `sum(gitlab_runner_jobs{state="pending", namespace=~"${NS}"}) or vector(0)`,
 
   orphanedNamespaces: () =>
     `count(kube_namespace_labels{namespace=~"ci-job-.*"}) - count(kube_pod_info{namespace=~"ci-job-.*"}) or vector(0)`,

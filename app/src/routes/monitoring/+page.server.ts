@@ -13,11 +13,25 @@ export const load: PageServerLoad = async ({ fetch }) => {
   const hpaData = hpaRes?.ok ? await hpaRes.json() : null;
   const podsData = podsRes?.ok ? await podsRes.json() : null;
 
+  // Group pods by forge for the UI
+  const allPods = podsData?.pods ?? MOCK_PODS;
+  const allHpas = hpaData?.hpas ?? MOCK_HPA_STATUS;
+
   return {
     prometheusAvailable: metricsData?.available ?? false,
     k8sAvailable: hpaData?.available ?? false,
     metrics: metricsData?.metrics ?? MOCK_DASHBOARD_METRICS,
-    hpas: hpaData?.hpas ?? MOCK_HPA_STATUS,
-    pods: podsData?.pods ?? MOCK_PODS,
+    hpas: allHpas,
+    pods: allPods,
+    forges: {
+      gitlab: {
+        pods: allPods.filter((p: { forge?: string }) => (p.forge ?? "gitlab") === "gitlab"),
+        hpas: allHpas.filter((h: { forge?: string }) => (h.forge ?? "gitlab") === "gitlab"),
+      },
+      github: {
+        pods: allPods.filter((p: { forge?: string }) => p.forge === "github"),
+        hpas: allHpas.filter((h: { forge?: string }) => h.forge === "github"),
+      },
+    },
   };
 };

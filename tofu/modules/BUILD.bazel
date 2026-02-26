@@ -39,6 +39,23 @@ tofu_module(
 )
 
 tofu_module(
+    name = "arc_controller",
+    srcs = glob(["arc-controller/*.tf"]),
+    providers = [
+        "helm",
+        "kubernetes",
+    ],
+)
+
+tofu_module(
+    name = "arc_runner",
+    srcs = glob(["arc-runner/*.tf"]),
+    providers = [
+        "helm",
+    ],
+)
+
+tofu_module(
     name = "gitlab_runner",
     srcs = glob(["gitlab-runner/*.tf"]),
     providers = [
@@ -107,6 +124,26 @@ tofu_module(
 # =============================================================================
 # Validation Tests (run with `bazel test //tofu/modules:*_validate`)
 # =============================================================================
+
+tofu_validate(
+    name = "arc_controller_validate",
+    module = ":arc_controller",
+    tags = [
+        "external",
+        "tofu",
+        "validation",
+    ],
+)
+
+tofu_validate(
+    name = "arc_runner_validate",
+    module = ":arc_runner",
+    tags = [
+        "external",
+        "tofu",
+        "validation",
+    ],
+)
 
 tofu_validate(
     name = "bazel_cache_validate",
@@ -223,6 +260,24 @@ tofu_validate(
 # =============================================================================
 
 tofu_fmt_test(
+    name = "arc_controller_fmt_test",
+    module = ":arc_controller",
+    tags = [
+        "formatting",
+        "tofu",
+    ],
+)
+
+tofu_fmt_test(
+    name = "arc_runner_fmt_test",
+    module = ":arc_runner",
+    tags = [
+        "formatting",
+        "tofu",
+    ],
+)
+
+tofu_fmt_test(
     name = "bazel_cache_fmt_test",
     module = ":bazel_cache",
     tags = [
@@ -329,6 +384,8 @@ tofu_fmt_test(
 filegroup(
     name = "all_modules",
     srcs = [
+        ":arc_controller",
+        ":arc_runner",
         ":bazel_cache",
         ":cnpg_operator",
         ":dns_record",
@@ -357,6 +414,8 @@ filegroup(
 filegroup(
     name = "k8s_modules",
     srcs = [
+        ":arc_controller",
+        ":arc_runner",
         ":gitlab_agent_rbac",
         ":gitlab_runner",
         ":gitlab_user_runner",
@@ -382,6 +441,8 @@ test_suite(
     name = "all_validate",
     tags = ["validation"],
     tests = [
+        ":arc_controller_validate",
+        ":arc_runner_validate",
         ":bazel_cache_validate",
         ":cnpg_operator_validate",
         ":dns_record_validate",
@@ -401,6 +462,8 @@ test_suite(
     name = "all_fmt_test",
     tags = ["formatting"],
     tests = [
+        ":arc_controller_fmt_test",
+        ":arc_runner_fmt_test",
         ":bazel_cache_fmt_test",
         ":cnpg_operator_fmt_test",
         ":dns_record_fmt_test",

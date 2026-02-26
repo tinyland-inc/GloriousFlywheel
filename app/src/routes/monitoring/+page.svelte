@@ -2,13 +2,40 @@
 	import HPAGauge from '$lib/components/metrics/HPAGauge.svelte';
 	import MetricCard from '$lib/components/metrics/MetricCard.svelte';
 	import DataTable from '$lib/components/common/DataTable.svelte';
-	import type { HPAStatus, PodInfo, MetricCardData } from '$lib/types';
+	import type { HPAStatus, PodInfo, MetricCardData, Forge } from '$lib/types';
 
 	let { data } = $props();
 
 	const metrics = $derived(data.metrics as MetricCardData[]);
 	const hpas = $derived(data.hpas as HPAStatus[]);
 	const pods = $derived(data.pods as PodInfo[]);
+
+	type ForgeFilter = 'all' | Forge;
+	let forgeFilter: ForgeFilter = $state('all');
+
+	const filteredHpas = $derived(
+		forgeFilter === 'all' ? hpas : hpas.filter((h) => (h.forge ?? 'gitlab') === forgeFilter)
+	);
+	const filteredPods = $derived(
+		forgeFilter === 'all' ? pods : pods.filter((p) => (p.forge ?? 'gitlab') === forgeFilter)
+	);
+
+	function forgeBadge(forge?: Forge): string {
+		if (forge === 'github') return 'GH';
+		return 'GL';
+	}
+
+	function forgeBadgeClass(forge?: Forge): string {
+		if (forge === 'github') return 'bg-gray-700 text-white';
+		return 'bg-orange-600 text-white';
+	}
+
+	function scalingLabel(hpa: HPAStatus): string {
+		if (hpa.scaling_model === 'arc') {
+			return hpa.min_replicas === 0 ? 'ARC (scale-to-zero)' : 'ARC';
+		}
+		return 'HPA';
+	}
 </script>
 
 <svelte:head>
@@ -16,7 +43,35 @@
 </svelte:head>
 
 <div class="space-y-6">
-	<h2 class="text-2xl font-bold">Monitoring</h2>
+	<div class="flex items-center justify-between">
+		<h2 class="text-2xl font-bold">Monitoring</h2>
+		<div class="flex gap-1">
+			<button
+				class="px-3 py-1 text-sm rounded-lg transition-colors {forgeFilter === 'all'
+					? 'bg-primary-500 text-white'
+					: 'bg-surface-200-700 hover:bg-surface-300-600'}"
+				onclick={() => (forgeFilter = 'all')}
+			>
+				All
+			</button>
+			<button
+				class="px-3 py-1 text-sm rounded-lg transition-colors {forgeFilter === 'gitlab'
+					? 'bg-orange-600 text-white'
+					: 'bg-surface-200-700 hover:bg-surface-300-600'}"
+				onclick={() => (forgeFilter = 'gitlab')}
+			>
+				GitLab
+			</button>
+			<button
+				class="px-3 py-1 text-sm rounded-lg transition-colors {forgeFilter === 'github'
+					? 'bg-gray-700 text-white'
+					: 'bg-surface-200-700 hover:bg-surface-300-600'}"
+				onclick={() => (forgeFilter = 'github')}
+			>
+				GitHub
+			</button>
+		</div>
+	</div>
 
 	<!-- Overview metrics -->
 	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -25,12 +80,28 @@
 		{/each}
 	</div>
 
-	<!-- HPA gauges -->
+	<!-- HPA / Autoscaler gauges -->
 	<div>
 		<h3 class="text-lg font-semibold mb-3">Autoscaling</h3>
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-			{#each hpas as hpa}
-				<HPAGauge {hpa} />
+			{#each filteredHpas as hpa}
+				<div class="relative">
+					<div class="absolute top-2 right-2 flex gap-1 z-10">
+						<span
+							class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded {forgeBadgeClass(
+								hpa.forge
+							)}"
+						>
+							{forgeBadge(hpa.forge)}
+						</span>
+						<span
+							class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-surface-300-600 text-surface-700-200"
+						>
+							{scalingLabel(hpa)}
+						</span>
+					</div>
+					<HPAGauge {hpa} />
+				</div>
 			{/each}
 		</div>
 	</div>
@@ -38,16 +109,55 @@
 	<!-- Pod table -->
 	<div>
 		<h3 class="text-lg font-semibold mb-3">Pods</h3>
-		<DataTable
-			data={pods as unknown as Record<string, unknown>[]}
-			columns={[
-				{ key: 'name', label: 'Name' },
-				{ key: 'status', label: 'Status', width: '100px' },
-				{ key: 'restarts', label: 'Restarts', width: '80px' },
-				{ key: 'age', label: 'Age', width: '80px' },
-				{ key: 'runner', label: 'Runner' }
-			]}
-		/>
+		{#if filteredPods.length > 0}
+			<div class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-surface-300-600">
+							<th class="text-left py-2 px-3 font-medium">Forge</th>
+							<th class="text-left py-2 px-3 font-medium">Name</th>
+							<th class="text-left py-2 px-3 font-medium w-24">Status</th>
+							<th class="text-left py-2 px-3 font-medium w-20">Restarts</th>
+							<th class="text-left py-2 px-3 font-medium w-20">Age</th>
+							<th class="text-left py-2 px-3 font-medium">Runner</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each filteredPods as pod}
+							<tr class="border-b border-surface-200-700">
+								<td class="py-2 px-3">
+									<span
+										class="inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded {forgeBadgeClass(
+											pod.forge
+										)}"
+									>
+										{forgeBadge(pod.forge)}
+									</span>
+								</td>
+								<td class="py-2 px-3 font-mono text-xs">{pod.name}</td>
+								<td class="py-2 px-3">
+									<span
+										class="inline-flex items-center px-2 py-0.5 text-xs rounded-full {pod.status ===
+										'Running'
+											? 'bg-green-500/20 text-green-600 dark:text-green-400'
+											: pod.status === 'Pending'
+												? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400'
+												: 'bg-red-500/20 text-red-600 dark:text-red-400'}"
+									>
+										{pod.status}
+									</span>
+								</td>
+								<td class="py-2 px-3">{pod.restarts}</td>
+								<td class="py-2 px-3">{pod.age}</td>
+								<td class="py-2 px-3">{pod.runner}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{:else}
+			<p class="text-sm text-surface-500">No pods found for the selected filter.</p>
+		{/if}
 	</div>
 
 	<!-- Data source status -->

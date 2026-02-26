@@ -1,0 +1,52 @@
+name: Test ARC Runners
+
+on:
+  push:
+    branches: [feat/arc-runners]
+  workflow_dispatch:
+
+jobs:
+  test-nix:
+    name: Test tinyland-nix
+    runs-on: tinyland-nix
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify runner environment
+        run: |
+          echo "Runner: ${{ runner.name }}"
+          echo "OS: ${{ runner.os }}"
+          echo "Environment: ${{ runner.environment }}"
+          uname -a
+
+      - name: Test cache connectivity
+        run: |
+          echo "=== Attic cache ==="
+          curl -sf http://attic-api.nix-cache.svc.cluster.local:8080 && echo "OK" || echo "UNREACHABLE"
+          echo ""
+          echo "=== Bazel cache ==="
+          curl -sf grpc://bazel-cache.nix-cache.svc.cluster.local:9092 2>/dev/null && echo "OK" || echo "(expected: grpc is not curl-able, but DNS resolves)"
+          getent hosts bazel-cache.nix-cache.svc.cluster.local && echo "DNS OK" || echo "DNS FAIL"
+
+      - name: Test env vars
+        run: |
+          echo "ATTIC_SERVER=$ATTIC_SERVER"
+          echo "ATTIC_CACHE=$ATTIC_CACHE"
+          echo "BAZEL_REMOTE_CACHE=$BAZEL_REMOTE_CACHE"
+          echo "NIX_CONFIG=$NIX_CONFIG"
+
+  test-docker:
+    name: Test tinyland-docker
+    runs-on: tinyland-docker
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify runner environment
+        run: |
+          echo "Runner: ${{ runner.name }}"
+          echo "OS: ${{ runner.os }}"
+          uname -a
+
+      - name: Test env vars
+        run: |
+          echo "BAZEL_REMOTE_CACHE=$BAZEL_REMOTE_CACHE"

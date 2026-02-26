@@ -764,7 +764,7 @@ resource "kubernetes_deployment" "attic_gc" {
 
       spec {
         dynamic "image_pull_secrets" {
-          for_each = local.ghcr_pull_secrets
+          for_each = toset(local.ghcr_pull_secrets)
           content {
             name = image_pull_secrets.value
           }
@@ -1177,7 +1177,7 @@ resource "kubernetes_job_v1" "init_cache" {
         restart_policy = "OnFailure"
 
         dynamic "image_pull_secrets" {
-          for_each = local.ghcr_pull_secrets
+          for_each = toset(local.ghcr_pull_secrets)
           content {
             name = image_pull_secrets.value
           }

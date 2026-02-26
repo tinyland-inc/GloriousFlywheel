@@ -17,9 +17,14 @@ export interface MetricCardData {
   trend?: "up" | "down" | "stable";
 }
 
+export type Forge = "gitlab" | "github";
+export type ScalingModel = "hpa" | "arc";
+
 export interface HPAStatus {
   name: string;
   runner_type?: string;
+  forge?: Forge;
+  scaling_model?: ScalingModel;
   current_replicas: number;
   desired_replicas: number;
   min_replicas: number;
@@ -43,6 +48,7 @@ export interface PodInfo {
   name: string;
   status: string;
   runner: string;
+  forge?: Forge;
   node: string;
   cpu_usage?: string;
   memory_usage?: string;

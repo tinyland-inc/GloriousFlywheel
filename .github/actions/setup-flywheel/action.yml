@@ -1,0 +1,31 @@
+name: "Setup GloriousFlywheel"
+description: "Configure Nix and Bazel cache endpoints for self-hosted runners"
+
+inputs:
+  attic-server:
+    description: "Attic server URL (auto-detected on self-hosted)"
+    default: ""
+  attic-cache:
+    description: "Attic cache name"
+    default: "main"
+  bazel-cache:
+    description: "Bazel remote cache endpoint (auto-detected on self-hosted)"
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Detect environment
+      shell: bash
+      run: |
+        if [ "${{ runner.environment }}" != "github-hosted" ]; then
+          # Self-hosted ARC runners have cluster DNS access
+          ATTIC="${{ inputs.attic-server }}"
+          echo "ATTIC_SERVER=${ATTIC:-${ATTIC_SERVER:-http://attic-api.nix-cache.svc.cluster.local:8080}}" >> "$GITHUB_ENV"
+
+          BAZEL="${{ inputs.bazel-cache }}"
+          echo "BAZEL_REMOTE_CACHE=${BAZEL:-${BAZEL_REMOTE_CACHE:-grpc://bazel-cache.nix-cache.svc.cluster.local:9092}}" >> "$GITHUB_ENV"
+        elif [ -n "${{ inputs.attic-server }}" ]; then
+          echo "ATTIC_SERVER=${{ inputs.attic-server }}" >> "$GITHUB_ENV"
+        fi
+        echo "ATTIC_CACHE=${{ inputs.attic-cache }}" >> "$GITHUB_ENV"
