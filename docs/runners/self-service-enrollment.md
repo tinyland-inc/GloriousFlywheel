@@ -18,20 +18,12 @@ No registration tokens, no admin requests. Add tags and go.
 
 ## Runner Types
 
-| Type   | Tags                           | Use Case                                 |
-| ------ | ------------------------------ | ---------------------------------------- |
-| docker | `docker`, `linux`, `amd64`     | General CI: linting, testing, builds     |
-| dind   | `docker`, `dind`, `privileged` | Docker-in-Docker: container image builds |
-| rocky8 | `rocky8`, `rhel8`, `linux`     | RHEL 8 compatibility testing             |
-| rocky9 | `rocky9`, `rhel9`, `linux`     | RHEL 9 compatibility testing             |
-| nix    | `nix`, `flakes`                | Nix builds with Attic binary cache       |
+See the [Runner Selection Guide](runner-selection.md) for the full
+capabilities matrix and decision tree. The three core types are:
 
-**Choosing a runner:**
-
-- Default to `docker` for most workloads.
-- Use `dind` only when you need to build container images (`docker build`).
-- Use `rocky8`/`rocky9` when your target is RHEL and you need OS-level packages.
-- Use `nix` for Nix flake builds; the Attic cache is pre-configured.
+- **docker** (tags: `docker`, `linux`, `amd64`) -- default for most jobs
+- **dind** (tags: `dind`, `privileged`) -- Docker-in-Docker container builds
+- **nix** (tags: `nix`, `flakes`) -- Nix flake builds with Attic cache
 
 ## CI/CD Components
 
