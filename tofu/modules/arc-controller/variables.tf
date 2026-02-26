@@ -29,7 +29,7 @@ variable "release_name" {
 variable "chart_version" {
   description = "ARC controller Helm chart version"
   type        = string
-  default     = "0.10.1"
+  default     = "0.13.1"
 }
 
 # =============================================================================

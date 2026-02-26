@@ -76,7 +76,7 @@ variable "controller_service_account_name" {
 variable "chart_version" {
   description = "ARC runner scale set Helm chart version"
   type        = string
-  default     = "0.10.1"
+  default     = "0.13.1"
 }
 
 # =============================================================================
