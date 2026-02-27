@@ -154,6 +154,35 @@ module "gh_dind" {
 }
 
 # =============================================================================
+# Extra Runner Scale Sets (multi-org / cross-repo)
+# =============================================================================
+
+module "extra_runners" {
+  source   = "../../modules/arc-runner"
+  for_each = var.extra_runner_sets
+
+  runner_name          = each.key
+  runner_label         = each.value.runner_label
+  runner_type          = each.value.runner_type
+  namespace            = var.runner_namespace
+  controller_namespace = var.controller_namespace
+  github_config_url    = each.value.github_config_url
+  github_config_secret = each.value.github_config_secret
+  min_runners          = each.value.min_runners
+  max_runners          = each.value.max_runners
+  cpu_request          = each.value.cpu_request
+  memory_request       = each.value.memory_request
+  cpu_limit            = each.value.cpu_limit
+  memory_limit         = each.value.memory_limit
+  attic_server         = each.value.attic_server
+  attic_cache          = each.value.attic_cache
+  bazel_cache_endpoint = each.value.bazel_cache_endpoint
+  image_pull_secrets   = local.ghcr_pull_secrets
+
+  depends_on = [module.arc_controller, kubernetes_namespace_v1.arc_runners]
+}
+
+# =============================================================================
 # GHCR Registry Auth (imagePullSecret)
 # =============================================================================
 

@@ -146,6 +146,72 @@ jobs:
       - run: docker build -t myapp .
 ```
 
+## Multi-Org / Cross-Repo Runners
+
+By default, ARC runner scale sets register at the **organization** level —
+every repo in that org can use `runs-on: tinyland-nix`. But personal repos
+or repos in other orgs can't reach those runners.
+
+The `extra_runner_sets` variable lets you deploy additional scale sets
+scoped to a different org or a single repository, all on the same cluster
+and sharing the same ARC controller.
+
+### How `githubConfigUrl` Scoping Works
+
+| URL pattern | Scope |
+|------------|-------|
+| `https://github.com/ORG` | All repos in the org |
+| `https://github.com/OWNER/REPO` | Single repository only |
+
+### Steps
+
+1. **Install GloriousFlywheel** on the target GitHub account/org
+   (Settings → Applications → Install).
+
+2. **Create a K8s secret** for the new installation:
+   ```bash
+   for ns in arc-systems arc-runners; do
+     kubectl create secret generic github-app-secret-chapel \
+       --namespace="$ns" \
+       --from-literal=github_app_id=2953466 \
+       --from-literal=github_app_installation_id=<NEW_INSTALLATION_ID> \
+       --from-file=github_app_pem=<PATH_TO_PEM_FILE>
+   done
+   ```
+
+3. **Add an `extra_runner_sets` entry** in your tfvars:
+   ```hcl
+   extra_runner_sets = {
+     chapel-nix = {
+       github_config_url    = "https://github.com/Jesssullivan/chapel"
+       github_config_secret = "github-app-secret-chapel"
+       runner_label         = "chapel-nix"
+       runner_type          = "nix"
+       max_runners          = 3
+       cpu_limit            = "4"
+       memory_limit         = "8Gi"
+     }
+   }
+   ```
+
+4. **Apply** — the new scale set appears in `arc-runners` alongside
+   the existing ones:
+   ```bash
+   tofu apply -var-file=tinyland.tfvars \
+     -var=cluster_context=tinyland-civo-dev \
+     -var=k8s_config_path=$HOME/.kube/config
+   ```
+
+5. **Use the label** in a workflow:
+   ```yaml
+   jobs:
+     build:
+       runs-on: chapel-nix
+       steps:
+         - uses: actions/checkout@v4
+         - run: nix build
+   ```
+
 ## See Also
 
 - [GitHub Actions Runners](../runners/github-actions.md) -- runner labels, cache integration, architecture

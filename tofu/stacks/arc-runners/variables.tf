@@ -253,3 +253,27 @@ variable "ghcr_username" {
   type        = string
   default     = "tinyland-inc"
 }
+
+# =============================================================================
+# Extra Runner Scale Sets (multi-org / cross-repo)
+# =============================================================================
+
+variable "extra_runner_sets" {
+  description = "Additional runner scale sets for external repos/orgs (keyed by unique name)"
+  type = map(object({
+    github_config_url    = string
+    github_config_secret = optional(string, "github-app-secret")
+    runner_label         = string
+    runner_type          = optional(string, "nix")
+    min_runners          = optional(number, 0)
+    max_runners          = optional(number, 5)
+    cpu_request          = optional(string, "500m")
+    memory_request       = optional(string, "1Gi")
+    cpu_limit            = optional(string, "4")
+    memory_limit         = optional(string, "8Gi")
+    attic_server         = optional(string, "")
+    attic_cache          = optional(string, "main")
+    bazel_cache_endpoint = optional(string, "")
+  }))
+  default = {}
+}
