@@ -136,6 +136,7 @@ Credentials are stored as a Kubernetes secret in the `arc-systems` namespace.
 
 ## See Also
 
+- [Multi-Org / Cross-Repo Runners](../guides/github-app-adoption.md#multi-org--cross-repo-runners) -- add runners for personal repos or other orgs
 - [Self-Service Enrollment](self-service-enrollment.md) -- GitLab runner enrollment
 - [Cache Integration](cache-integration.md) -- cache configuration details
 - [Runner Selection](runner-selection.md) -- choosing the right runner type

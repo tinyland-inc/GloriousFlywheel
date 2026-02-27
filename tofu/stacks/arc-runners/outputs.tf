@@ -44,3 +44,8 @@ output "runner_namespace" {
   description = "Runner scale sets namespace"
   value       = var.runner_namespace
 }
+
+output "extra_runner_labels" {
+  description = "Labels for extra runner scale sets"
+  value       = { for k, v in module.extra_runners : k => v.runner_label }
+}
