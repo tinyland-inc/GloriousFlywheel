@@ -166,6 +166,13 @@ module "dind_runner" {
 resource "kubernetes_secret" "ghcr_auth" {
   count = var.ghcr_token != "" ? 1 : 0
 
+  lifecycle {
+    precondition {
+      condition     = var.ghcr_username != ""
+      error_message = "ghcr_username is required when ghcr_token is set"
+    }
+  }
+
   metadata {
     name      = "ghcr-auth"
     namespace = var.namespace

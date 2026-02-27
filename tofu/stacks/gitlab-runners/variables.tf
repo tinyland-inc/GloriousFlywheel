@@ -319,7 +319,7 @@ variable "enable_runner_cleanup" {
 variable "kubectl_image" {
   description = "Container image for kubectl (cleanup job)"
   type        = string
-  default     = "ghcr.io/tinyland-inc/kubectl:latest"
+  default     = "bitnami/kubectl:latest"
 }
 
 # =============================================================================
@@ -336,5 +336,5 @@ variable "ghcr_token" {
 variable "ghcr_username" {
   description = "GHCR username for image pull authentication"
   type        = string
-  default     = "tinyland-inc"
+  default     = ""
 }
