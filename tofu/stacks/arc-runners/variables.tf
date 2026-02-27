@@ -22,7 +22,11 @@ variable "cluster_context" {
 variable "github_config_url" {
   description = "GitHub organization or repository URL for runner registration"
   type        = string
-  default     = "https://github.com/tinyland-inc"
+
+  validation {
+    condition     = can(regex("^https://github\\.com/.+", var.github_config_url))
+    error_message = "github_config_url must be a GitHub URL (e.g. https://github.com/my-org)"
+  }
 }
 
 variable "github_config_secret" {
@@ -251,5 +255,5 @@ variable "ghcr_token" {
 variable "ghcr_username" {
   description = "GHCR username for image pull authentication"
   type        = string
-  default     = "tinyland-inc"
+  default     = ""
 }

@@ -160,6 +160,13 @@ module "gh_dind" {
 resource "kubernetes_secret" "ghcr_auth_controller" {
   count = var.ghcr_token != "" ? 1 : 0
 
+  lifecycle {
+    precondition {
+      condition     = var.ghcr_username != ""
+      error_message = "ghcr_username is required when ghcr_token is set"
+    }
+  }
+
   metadata {
     name      = "ghcr-auth"
     namespace = var.controller_namespace

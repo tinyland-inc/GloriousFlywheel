@@ -116,7 +116,7 @@ variable "default_env" {
 variable "prometheus_url" {
   description = "Prometheus server URL for metrics queries"
   type        = string
-  default     = "http://prometheus.tinyland-staging.svc.cluster.local:9090"
+  default     = ""
 }
 
 # =============================================================================
