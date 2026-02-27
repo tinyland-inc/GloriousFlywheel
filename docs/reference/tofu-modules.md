@@ -8,114 +8,152 @@ order: 1
 All reusable infrastructure modules live in `tofu/modules/`. Each module is
 designed to be composed by stack root configurations in `tofu/stacks/`.
 
-## attic-server
+There are 15 modules organized by function: runner infrastructure, cache
+platform, Kubernetes primitives, and operators.
 
-Deploys the Attic binary cache server as a Kubernetes Deployment with an
-associated Service and Ingress.
+## Runner Infrastructure
 
-- **Inputs**: image, replicas, storage size, database URL, server URL, cache name,
-  namespace, ingress host, TLS secret name
-- **Outputs**: service endpoint, ingress host
-- **Dependencies**: `cloudnative-pg` (for PostgreSQL), `k8s-namespace`
+### arc-controller
 
-## attic-gc
+Deploys the GitHub Actions Runner Controller (ARC) via Helm chart. The
+controller watches for `workflow_job` webhook events and manages runner
+scale sets.
 
-Deploys a garbage collection CronJob that periodically cleans expired entries
-from the Attic cache.
+- **Path**: `tofu/modules/arc-controller/`
+- **Key variables**: `namespace`, `chart_version`, `image_pull_secrets`
+- **Outputs**: `namespace`, `release_name`, `chart_version`
 
-- **Inputs**: image, schedule (cron expression), cache name, server URL, namespace
-- **Outputs**: cronjob name
-- **Dependencies**: `attic-server`
+### arc-runner
 
-## cloudnative-pg
+Deploys a GitHub Actions runner scale set via ARC. Supports docker, dind,
+and nix runner types with scale-to-zero.
 
-Provisions a PostgreSQL cluster using the CloudNativePG operator.
+- **Path**: `tofu/modules/arc-runner/`
+- **Key variables**: `runner_name`, `runner_label`, `runner_type`, `github_config_url`, `github_config_secret`, `min_runners`, `max_runners`
+- **Outputs**: `release_name`, `runner_label`, `runner_type`
 
-- **Inputs**: cluster name, instances, storage size, database name, namespace,
-  backup schedule
-- **Outputs**: connection URI (with urlencode-safe credentials), cluster name
-- **Dependencies**: CloudNativePG operator must be installed in the cluster
+### gitlab-runner
 
-Note: connection strings must use `urlencode()` for passwords, as CNPG may
-generate credentials containing URL-unsafe characters.
+Deploys a GitLab Runner via Helm chart with HPA support. Supports docker,
+dind, and nix runner types with configurable autoscaling, monitoring, and
+namespace-per-job isolation.
 
-## gitlab-runner
+- **Path**: `tofu/modules/gitlab-runner/`
+- **Key variables**: `runner_token`, `runner_name`, `runner_type`, `runner_tags`, `hpa_enabled`, `hpa_min_replicas`, `hpa_max_replicas`
+- **Outputs**: `release_name`, `runner_type`, `runner_tags`, `hpa_enabled`
 
-Deploys a GitLab Runner with Horizontal Pod Autoscaler support. Supports
-multiple runner types (docker, dind, rocky8, rocky9, nix) through configuration
-variables.
+### gitlab-user-runner
 
-- **Inputs**: runner name, type, image, tags, concurrent jobs, namespace,
-  registration token, resource requests/limits, HPA min/max replicas,
-  CPU utilization target
-- **Outputs**: runner name, HPA name
-- **Dependencies**: `k8s-namespace`, GitLab group/project for registration
+Registers a GitLab Runner via the `gitlab_user_runner` resource, automating
+token lifecycle management.
 
-## k8s-namespace
+- **Path**: `tofu/modules/gitlab-user-runner/`
+- **Key variables**: `group_id`, `tag_list`, `description`
+- **Outputs**: `token`, `runner_id`
 
-Creates a Kubernetes namespace with RBAC bindings and optional resource quotas.
+### runner-dashboard
 
-- **Inputs**: namespace name, labels, annotations, resource quota (cpu, memory,
-  pods), role bindings
-- **Outputs**: namespace name
-- **Dependencies**: none
+Deploys the SvelteKit runner dashboard with OAuth login, Prometheus metrics,
+multi-namespace RBAC, and optional Caddy sidecar proxy.
 
-## k8s-ingress
+- **Path**: `tofu/modules/runner-dashboard/`
+- **Key variables**: `image`, `namespace`, `gitlab_oauth_client_id`, `prometheus_url`, `runners_namespace`, `arc_namespaces`, `enable_caddy_proxy`
+- **Outputs**: `deployment_name`, `service_endpoint`, `ingress_url`
 
-Creates a Kubernetes Ingress resource with TLS termination via cert-manager.
+### runner-cleanup
 
-- **Inputs**: name, namespace, host, service name, service port, TLS secret name,
-  cert-manager cluster issuer, annotations
-- **Outputs**: ingress name, host
-- **Dependencies**: cert-manager operator, target Service
+CronJob that reaps orphaned and stuck pods (Terminating, Completed, Failed)
+in the runner namespace.
 
-## k8s-deployment
+- **Path**: `tofu/modules/runner-cleanup/`
+- **Key variables**: `namespace`, `schedule`, `terminating_threshold_seconds`
 
-A generic Kubernetes Deployment module for workloads that do not need
-specialized logic.
+### runner-security
 
-- **Inputs**: name, namespace, image, replicas, ports, environment variables,
-  resource requests/limits, volume mounts, liveness/readiness probes
-- **Outputs**: deployment name, selector labels
-- **Dependencies**: `k8s-namespace`
+Applies security policies to the runner namespace: default-deny
+NetworkPolicy, ResourceQuota, LimitRange, and PriorityClasses.
 
-## k8s-service
+- **Path**: `tofu/modules/runner-security/`
+- **Key variables**: `namespace`, `quota_cpu_requests`, `quota_memory_requests`, `priority_classes_enabled`
+- **Outputs**: `manager_priority_class_name`, `job_priority_class_name`
 
-Creates a Kubernetes Service to expose a Deployment.
+### gitlab-agent-rbac
 
-- **Inputs**: name, namespace, selector labels, port, target port, type
-  (ClusterIP, NodePort, LoadBalancer)
-- **Outputs**: service name, cluster IP
-- **Dependencies**: target Deployment
+Configures Kubernetes RBAC for GitLab Agent `ci_access` impersonation with
+read-only runner access.
 
-## k8s-secret
+- **Path**: `tofu/modules/gitlab-agent-rbac/`
+- **Key variables**: `namespace`, `allowed_verbs`
+- **Outputs**: `role_name`, `role_binding_name`
 
-Creates a Kubernetes Secret from a map of key-value pairs.
+## Cache Platform
 
-- **Inputs**: name, namespace, data (map of string to string), type (Opaque,
-  kubernetes.io/tls, etc.)
-- **Outputs**: secret name
-- **Dependencies**: `k8s-namespace`
+### hpa-deployment
 
-## runner-dashboard
+Generic HPA-enabled deployment module for stateless services with object
+storage backends. Used by the Attic cache API, and supports Ingress,
+TLS, Prometheus scraping, and topology spread.
 
-Deploys the SvelteKit runner-dashboard application as a Kubernetes Deployment
-with Service and Ingress.
+- **Path**: `tofu/modules/hpa-deployment/`
+- **Key variables**: `name`, `namespace`, `image`, `container_port`, `enable_hpa`, `min_replicas`, `max_replicas`, `enable_ingress`
+- **Outputs**: `deployment_name`, `service_endpoint`, `ingress_url`, `hpa_name`
 
-- **Inputs**: image, replicas, namespace, ingress host, TLS secret name,
-  GitLab API URL, OAuth client ID, OAuth client secret, environment variables
-- **Outputs**: service endpoint, ingress host
-- **Dependencies**: `k8s-namespace`, `k8s-ingress`
+### bazel-cache
 
-## monitoring
+Deploys bazel-remote cache server with S3/MinIO backend. Supports HPA
+autoscaling, Ingress, and Prometheus metrics.
 
-Creates a Prometheus ServiceMonitor resource for scraping metrics from a target
-Service.
+- **Path**: `tofu/modules/bazel-cache/`
+- **Key variables**: `name`, `namespace`, `s3_endpoint`, `s3_bucket`, `s3_secret`, `max_cache_size_gb`
+- **Outputs**: `service_name`, `grpc_endpoint`, `http_endpoint`, `bazelrc_config`
 
-- **Inputs**: name, namespace, service name, port name, path, interval,
-  labels (for Prometheus selector matching)
-- **Outputs**: servicemonitor name
-- **Dependencies**: Prometheus Operator (kube-prometheus-stack or equivalent)
+### postgresql-cnpg
+
+Production-grade PostgreSQL cluster using CloudNativePG with TLS, network
+policies, S3 backup, and high availability.
+
+- **Path**: `tofu/modules/postgresql-cnpg/`
+- **Key variables**: `name`, `namespace`, `database_name`, `instances`, `storage_size`, `enable_backup`
+- **Outputs**: `cluster_name`, `connection_string_rw`, `database_url`, `credentials_secret_name`
+
+## Operators
+
+### cnpg-operator
+
+Installs the CloudNativePG operator via Helm chart for managing PostgreSQL
+cluster CRDs.
+
+- **Path**: `tofu/modules/cnpg-operator/`
+- **Key variables**: `namespace`, `chart_version`, `operator_replicas`
+- **Outputs**: `namespace`, `operator_version`
+
+### minio-operator
+
+Installs the MinIO Operator via Helm chart for managing MinIO Tenant CRDs.
+
+- **Path**: `tofu/modules/minio-operator/`
+- **Key variables**: `namespace`, `operator_version`, `operator_replicas`
+- **Outputs**: `namespace`, `operator_version`
+
+### minio-tenant
+
+Creates a MinIO Tenant CRD for S3-compatible object storage. Supports
+standalone and distributed HA modes with lifecycle policies.
+
+- **Path**: `tofu/modules/minio-tenant/`
+- **Key variables**: `tenant_name`, `namespace`, `volume_size`, `storage_class`, `buckets`
+- **Outputs**: `tenant_name`, `s3_endpoint`, `bucket_name`
+
+## DNS
+
+### dns-record
+
+Reusable DNS record management supporting DreamHost API and external-dns
+annotation strategies.
+
+- **Path**: `tofu/modules/dns-record/`
+- **Key variables**: `provider_type`, `domain`, `records`
+- **Outputs**: `record_count`, `ingress_annotations`
 
 ## Related
 

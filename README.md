@@ -5,10 +5,10 @@ Self-deploying infrastructure that builds, caches, and monitors itself.
 ## What is this?
 
 A set of OpenTofu modules, Nix packages, and a SvelteKit monitoring dashboard that
-form a recursive infrastructure system for Gitlab.  GitLab runners deploy themselves as a HPA runner pool, the Nix
-binary cache caches its own derivations, bazel overlay orchestrates intrer enterprise deployments,
-intra enterprise automations (such as your companies pool of autonmous clankers, Steve, RenovateBot or your manager checking in every now and again)
-all running on infrastructure managed by this code.  I think its kinda neat.
+form a recursive infrastructure system for GitLab and GitHub. Runners deploy themselves as an HPA runner pool (GitLab) or ARC scale sets (GitHub Actions), the Nix
+binary cache caches its own derivations, bazel overlay orchestrates inter-enterprise deployments,
+intra-enterprise automations (such as your company's pool of autonomous clankers, Steve, RenovateBot or your manager checking in every now and again)
+all running on infrastructure managed by this code. I think its kinda neat.
 
 ## Architecture
 
@@ -66,6 +66,7 @@ cp .env.example .env
 # Deploy stacks in order (each needs a tfvars file in its stack dir)
 just tofu-deploy attic            # Cache platform: CNPG, MinIO, PostgreSQL, Attic API
 just tofu-deploy gitlab-runners
+just tofu-deploy arc-runners         # GitHub Actions runner pool (ARC)
 just tofu-deploy runner-dashboard
 ```
 

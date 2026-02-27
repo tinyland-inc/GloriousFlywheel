@@ -45,8 +45,10 @@ clusters.
 
 ## Runners
 
-- [Overview](runners/README.md) -- 5 runner types
+- [Overview](runners/README.md) -- cross-forge runner pool (GitLab CI + GitHub Actions)
 - [Selection Guide](runners/runner-selection.md) -- which runner to use
+- [GitHub Actions Runners](runners/github-actions.md) -- ARC setup, composite actions, cache integration
+- [Self-Service Enrollment](runners/self-service-enrollment.md) -- onboard your project
 - [Runbook](runners/runbook.md) -- operational procedures
 
 ## CI/CD
@@ -54,6 +56,15 @@ clusters.
 - [Pipeline Overview](ci-cd/pipeline-overview.md) -- 4-stage pipeline
 - [Overlay Pipelines](ci-cd/overlay-pipelines.md) -- how overlays extend CI
 - [Deployment Flow](ci-cd/deployment-flow.md) -- commit to production
+
+## Guides
+
+- [GitHub App Adoption](guides/github-app-adoption.md) -- install GloriousFlywheel on your org
+- [Cross-Forge CI](guides/cross-forge-ci.md) -- GitLab CI vs GitHub Actions side-by-side
+
+## Dashboard
+
+- [Dashboard Overview](dashboard/overview.md) -- architecture, features, auth
 
 ## Reference
 

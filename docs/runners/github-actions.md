@@ -1,3 +1,8 @@
+---
+title: GitHub Actions Runners
+order: 15
+---
+
 # GitHub Actions Runners
 
 Self-hosted GitHub Actions runners powered by ARC (Actions Runner Controller)
