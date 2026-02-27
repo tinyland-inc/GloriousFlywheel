@@ -9,6 +9,7 @@ exclude = [
   "example\\.com",
   "\\{org\\}",
   "\\$CI_",
+  "quintessence\\.sh",
 ]
 
 # Accept these status codes
