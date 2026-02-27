@@ -1,22 +1,18 @@
 # Lychee link checker configuration
 # https://lychee.cli.rs/usage/config/
 
-# Only check external URLs (internal links are handled by scripts/check-links.js)
-include = ["docs/**/*.md", "README.md", "app/README.md"]
-
 # Exclude patterns
 exclude = [
   "localhost",
   "127\\.0\\.0\\.1",
   "svc\\.cluster\\.local",
   "example\\.com",
-  "\\{org\\}",             # placeholder in docs
-  "\\$CI_",                # GitLab CI variables
+  "\\{org\\}",
+  "\\$CI_",
 ]
 
-# Exclude status codes
-accept = "100..=399"
-exclude_status = [429, 403]
+# Accept these status codes
+accept = [200, 201, 204, 301, 302, 307, 308]
 
 # Performance
 max_concurrency = 8
