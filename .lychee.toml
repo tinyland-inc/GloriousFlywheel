@@ -19,4 +19,4 @@ max_concurrency = 8
 timeout = 30
 
 # Don't check mail addresses
-exclude_mail = true
+include_mail = false
