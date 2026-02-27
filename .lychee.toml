@@ -10,10 +10,11 @@ exclude = [
   "\\{org\\}",
   "\\$CI_",
   "quintessence\\.sh",
+  "jesssullivan\\.github\\.io/attic-iac",
 ]
 
-# Accept these status codes
-accept = [200, 201, 204, 301, 302, 307, 308]
+# Accept these status codes (403 = auth-walled pages like ACM, private GitLab repos)
+accept = [200, 201, 204, 301, 302, 307, 308, 403]
 
 # Performance
 max_concurrency = 8
